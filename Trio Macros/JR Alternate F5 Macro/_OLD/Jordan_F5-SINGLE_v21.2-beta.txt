@@ -1,0 +1,1387 @@
+' F5-SINGLE PLAYER/TEAM PLUGIN BETA v21.1
+'
+
+'on error resume next
+
+Name = TrioCmd("page:getpagetemplate")
+a_tfNames = TrioCmd("page:get_tabfield_names")
+a_blank = ""
+sVersion = "SINGLE-BETA_v21.1"
+
+Call m_globalLeague(a_tfNames,a_globalLeagueSet)
+Call m_Scene(a_LogoTabs,a_FNameTabs,a_LNameTabs,a_HSTabs,a_JerTabs,a_PosTabs,a_PlyrLogoTabs,v_Rows,a_RowVer,a_TeamNaming,a_LeagueLogo,a_Single,a_runSameTeam,a_slabThinWide,a_ScriptLogNumber)
+
+Select Case a_ScriptLogNumber
+	Case "1"
+		Nachos = "GOOD"
+	Case Else
+		if InStr(a_tfNames, av_Rows) > 0 then
+			a_Rows = v_Rows
+		else
+			Call m_Rows(a_Rows,a_RowVer)
+		end if
+
+		if InStr(a_tfNames, a_slabThinWide) > 0 then
+			v_slabThinWide = TrioCmd("page:get_property " & a_slabThinWide)
+			Select Case a_TeamNaming
+				Case "4","5"
+					if v_slabThinWide = "0" then
+						a_slabWidthToggle = "THIN"
+						a_TeamNaming = "5"
+					elseif v_slabThinWide = "1" then
+						a_slabWidthToggle = "WIDE"
+						a_TeamNaming = a_TeamNaming
+					else
+						a_slabWidthToggle = ""
+						a_TeamNaming = a_TeamNaming
+					end if
+				Case else
+					a_TeamNaming = a_TeamNaming
+			End Select
+		else
+			a_TeamNaming = a_TeamNaming
+		end if
+		
+		Select Case Name
+			Case "FS_Stnd"
+				a_TeamNaming = "4"
+			Case Else
+				a_TeamNaming = a_TeamNaming
+		End Select
+
+		i = a_Rows
+		a_LoopPosition = i
+		v_LTab = a_LogoTabs(i)
+		v_FNTab = a_FNameTabs(i)
+		v_LNTab = a_LNameTabs(i)
+		v_HSTab = a_HSTabs(i)
+		v_JTab = a_JerTabs(i)
+		v_PTab = a_PosTabs(i)
+		v_PLTab = a_PlyrLogoTabs(i)
+
+		if a_Single = "NO" then
+			Call m_Headshot(a_fnTeam,a_fnSearch,nv_path,nv_fnList,v_fnList,v_plyrArray,v_initial,a_fnLeague,a_LoopPosition,a_TBempty)
+		end if
+		
+		if a_Single = "YES" then
+			Call m_HeadshotSingle(a_fnTeam,a_fnSearch,nv_path,nv_fnList,v_fnList,v_plyrArray,v_initial,a_fnLeague,a_fnJersey,a_LoopPosition,a_TBempty)
+		end if
+		
+		if a_fnTeam = "" then
+			Tacos = "AMAZING"
+		else
+			if a_fnSearch = "" then
+				Call m_Team(a_TBLeftName,a_TBRightName)
+				a_TBteamVS = a_TBLeftName & " vs " & a_TBRightName
+			else
+				Call m_Player(a_TBLeftName,a_TBRightName)
+				a_TBplyrVS = a_TBLeftName & " & " & a_TBRightName
+			end if
+		end if
+
+		Call m_globalLeague(a_tfNames,a_globalLeagueSet)
+
+		Select Case Name
+				Case "TB_Main"
+					Call m_TopicBarControl(a_TBplyrVS,a_TBteamVS)
+					Call m_CenterName()
+				Case "M1_Stat","MO_Stat","M1_PlyrTeamNotes","MO_PlyrTeamNotes","M1_PlyrTeamNotes2","MO_PlyrTeamNotes2"
+					Call m_CenterName()
+				Case Else
+					Mustard = "YELLOW"
+		End Select
+
+		if a_Rows = "1" Then
+			WATER = "HYDRATING"
+		else	
+			Call m_SameTeam(a_Rows,a_LogoTabs,a_PlyrLogoTabs,a_LeagueLogo,a_runSameTeam)
+		end if
+End Select
+
+
+'-------------------------------------------------
+'##############      FUNCTIONS      ##############
+'-------------------------------------------------
+
+
+'--------SCENE TABFIELD ARRAYS & SETUP INFO--------
+Function m_Scene(a_LogoTabs,a_FNameTabs,a_LNameTabs,a_HSTabs,a_JerTabs,a_PosTabs,a_PlyrLogoTabs,v_Rows,a_RowVer,a_TeamNaming,a_LeagueLogo,a_Single,a_runSameTeam,a_slabThinWide,a_ScriptLogNumber)
+	a_ScriptLogNumber = "0"
+	v_Rows = inputbox("Enter the Player/Team number you want to change" & vbCrlf & vbCrlf & "Enter Player/Team Number:" & vbCrlf & "Example:   2","F5-SINGLE PLAYER/TEAM PLUGIN","")
+	Select Case Name
+		Case "L3_Bio","L3_PlyrNote","L3_PlyrStat","L3_TeamPlyrNotes","L3_TeamPlyrStat","L3_TmPlyrStatLine","FS_PlyrNote","FS_PlyrStat","FS_PlyrComp","FS_StrtGoalNHL","FS_StrtGoalComp","FS_2HeadComp","FS_2TeamNotes","FS_PlyrCompRank","FS_3HdStat","FS_4HdStat","FS_5HdStat","FS_2HdNotes","FS_3HdNotes","FS_4HdNotes","FS_5HdNotes","SL_PlyrStats","SL_PlyrStats10","WG_PlyrStats","WGM_PlyrStats_Matrox"
+			a_LogoTabs = array("X","B0000","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0010","I0010","J0010","K0010","L0010","M0010","N0010","O0010","P0010","Q0010")
+			a_LNameTabs = array("X","H0011","I0011","J0011","K0011","L0011","M0011","N0011","O0011","P0011","Q0011")
+			a_HSTabs = array("X","H0021","I0021","J0021","K0021","L0021","M0021","N0021","O0021","P0021","Q0021")
+			a_JerTabs = array("X","H0031","I0031","J0031","K0031","L0031","M0031","N0031","O0031","P0031","Q0031")
+			a_PosTabs = array("X","H0041","I0041","J0041","K0041","L0041","M0041","N0041","O0041","P0041","Q0041")
+			a_PlyrLogoTabs = array("X","H0098","I0098","J0098","K0098","L0098","M0098","N0098","O0098","P0098","Q0098")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "YES"
+			a_slabThinWide = "A051X "
+		Case "L3_GenTxt3Line","L3_GenTxt"
+			a_LogoTabs = array("X","B0000","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","C0010","C0010","C0010","C0010","C0010","C0010","C0010","C0010","C0010","C0010")
+			a_LNameTabs = array("X","C0020","C0020","C0020","C0020","C0020","C0020","C0020","C0020","C0020","C0020")
+			a_HSTabs = array("X","H0021","I0021","J0021","K0021","L0021","M0021","N0021","O0021","P0021","Q0021")
+			a_JerTabs = array("X","H0031","I0031","J0031","K0031","L0031","M0031","N0031","O0031","P0031","Q0031")
+			a_PosTabs = array("X","H0041","I0041","J0041","K0041","L0041","M0041","N0041","O0041","P0041","Q0041")
+			a_PlyrLogoTabs = array("X","H0098","I0098","J0098","K0098","L0098","M0098","N0098","O0098","P0098","Q0098")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "YES"
+			a_slabThinWide = "A0510 "
+		Case "L3_SplitScreen"
+			a_LogoTabs = array("X","B0000","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0051","H0061","H0071","H0081","H0091","H0101","H0111","H0121","H0131","H0141")
+			a_LNameTabs = array("X","H0052","H0062","H0072","H0082","H0092","H0102","H0112","H0122","H0132","H0142")
+			a_HSTabs = array("X","H0021","I0021","J0021","K0021","L0021","M0021","N0021","O0021","P0021","Q0021")
+			a_JerTabs = array("X","H0031","I0031","J0031","K0031","L0031","M0031","N0031","O0031","P0031","Q0031")
+			a_PosTabs = array("X","H0041","I0041","J0041","K0041","L0041","M0041","N0041","O0041","P0041","Q0041")
+			a_PlyrLogoTabs = array("X","H0098","I0098","J0098","K0098","L0098","M0098","N0098","O0098","P0098","Q0098")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A0510 "
+		Case "L3_Score"
+			a_LogoTabs = array("X","B0000","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0051","H0061","H0071","H0081","H0091","H0101","H0111","H0121","H0131","H0141")
+			a_LNameTabs = array("X","H0052","H0062","H0072","H0082","H0092","H0102","H0112","H0122","H0132","H0142")
+			a_HSTabs = array("X","H0050","H0060","H0070","H0080","H0090","H00XX","H00XX","H00XX","H00XX","H00XX")
+			a_JerTabs = array("X","H0031","I0031","J0031","K0031","L0031","M0031","N0031","O0031","P0031","Q0031")
+			a_PosTabs = array("X","H0041","I0041","J0041","K0041","L0041","M0041","N0041","O0041","P0041","Q0041")
+			a_PlyrLogoTabs = array("X","H0098","I0098","J0098","K0098","L0098","M0098","N0098","O0098","P0098","Q0098")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A0510 "
+		Case "L3_TitleCard","L3_TitleRejoin"
+			a_LogoTabs = array("X","B0000","B0001","B0002","B0003","B0004")
+			a_FNameTabs = array("X","H0110","I0110","J0110","K0110","L0110")
+			a_LNameTabs = array("X","H0120","I0120","J0120","K0120","L0120")
+			a_HSTabs = array("X","H0XXX","I0XXX","J0XXX","K0XXX","L0XXX")
+			a_JerTabs = array("X","H0XXX","I0XXX","J0XXX","K0XXX","L0XXX")
+			a_PosTabs = array("X","H0XXX","I0XXX","J0XXX","K0XXX","L0XXX")
+			a_PlyrLogoTabs = array("X","H0XXX","I0XXX","J0XXX","K0XXX","L0XXX")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A0XXX "
+		Case "NU_PlayerName","NU_PlyrSnglStat","NU_ScoreNBA","NU_ScoreNHL"
+			a_LogoTabs = array("X","B0000","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0010","I0010","J0010","K0010","L0010","M0010","N0010","O0010","P0010","Q0010")
+			a_LNameTabs = array("X","H0011","I0011","J0011","K0011","L0011","M0011","N0011","O0011","P0011","Q0011")
+			a_HSTabs = array("X","H0005","I0005","J0005","K0005","L0005","M0005","N0005","O0005","P0005","Q0005")
+			a_JerTabs = array("X","H0031","I0031","J0031","K0031","L0031","M0031","N0031","O0031","P0031","Q0031")
+			a_PosTabs = array("X","H0041","I0041","J0041","K0041","L0041","M0041","N0041","O0041","P0041","Q0041")
+			a_PlyrLogoTabs = array("X","H0098","I0098","J0098","K0098","L0098","M0098","N0098","O0098","P0098","Q0098")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A0XXX "
+		Case "SL_GenTxt","WG_GenTxt","WGM_GenTxt_Matrox"
+			a_LogoTabs = array("X","B0000","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","B0110","B0110","B0110","B0110","B0110","B0110","B0110","B0110","B0110","B0110")
+			a_LNameTabs = array("X","H0011","I0011","J0011","K0011","L0011","M0011","N0011","O0011","P0011","Q0011")
+			a_HSTabs = array("X","H0005","I0005","J0005","K0005","L0005","M0005","N0005","O0005","P0005","Q0005")
+			a_JerTabs = array("X","H0031","I0031","J0031","K0031","L0031","M0031","N0031","O0031","P0031","Q0031")
+			a_PosTabs = array("X","H0041","I0041","J0041","K0041","L0041","M0041","N0041","O0041","P0041","Q0041")
+			a_PlyrLogoTabs = array("X","H0098","I0098","J0098","K0098","L0098","M0098","N0098","O0098","P0098","Q0098")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "4"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A0510 "
+		Case "SL_SingleStat"
+			a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009","B0010")
+			a_FNameTabs = array("X","H0200","I0200","J0200","K0200","L0200","M0200","N0200","O0200","P0200","Q0200")
+			a_LNameTabs = array("X","H0011","I0011","J0011","K0011","L0011","M0011","N0011","O0011","P0011","Q0011")
+			a_HSTabs = array("X","H0100","I0100","J0100","K0100","L0100","M0100","N0100","O0100","P0100","Q0100")
+			a_JerTabs = array("X","H0031","I0031","J0031","K0031","L0031","M0031","N0031","O0031","P0031","Q0031")
+			a_PosTabs = array("X","H0041","I0041","J0041","K0041","L0041","M0041","N0041","O0041","P0041","Q0041")
+			a_PlyrLogoTabs = array("X","H0000","I0000","J0000","K0000","L0000","M0000","N0000","O0000","P0000","Q0000")
+			av_Rows = "C0000 "
+			a_TeamNaming = "5"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "YES"
+			a_Single = "NO"
+			a_runSameTeam = "YES"
+			a_slabThinWide = "A0510 "
+		Case "SL_5HdGenTxt","SL_5HdGenTxtReveal"
+			a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009","B0010")
+			a_FNameTabs = array("X","H0100","I0100","J0100","K0100","L0100","M0100","N0100","O0100","P0100","Q0100")
+			a_LNameTabs = array("X","H0011","I0011","J0011","K0011","L0011","M0011","N0011","O0011","P0011","Q0011")
+			a_HSTabs = array("X","H0002","I0002","J0002","K0002","L0002","M0002","N0002","O0002","P0002","Q0002")
+			a_JerTabs = array("X","H0031","I0031","J0031","K0031","L0031","M0031","N0031","O0031","P0031","Q0031")
+			a_PosTabs = array("X","H0041","I0041","J0041","K0041","L0041","M0041","N0041","O0041","P0041","Q0041")
+			a_PlyrLogoTabs = array("X","H0000","I0000","J0000","K0000","L0000","M0000","N0000","O0000","P0000","Q0000")
+			av_Rows = "C0000 "
+			a_TeamNaming = "4"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "YES"
+			a_Single = "NO"
+			a_runSameTeam = "YES"
+			a_slabThinWide = "A0510 "
+		Case "SL_LeagueStat","WG_LeagueStat","WGM_LeagueStat_Matrox"
+			a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009","B0010")
+			a_FNameTabs = array("X","H1101","I1101","J1101","K1101","L1101","M1101","N1101","O1101","P1101","Q1101")
+			a_LNameTabs = array("X","H00XX","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			a_HSTabs = array("X","H00XX","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			a_JerTabs = array("X","H00XX","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			a_PosTabs = array("X","H00XX","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			a_PlyrLogoTabs = array("X","H00XX","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			av_Rows = "C0000 "
+			a_TeamNaming = "4"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "YES"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A0510 "
+		Case "SL_PlyrComparison","SL_PlyrComparisonRank","WG_PlyrComparison","WGM_PlyrComparison_Matrox"
+			a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0011","J0021","K0011","L0011","M0011","N0011","O0011","P0011","Q0011")
+			a_LNameTabs = array("X","H00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			a_HSTabs = array("X","H0002","J0002","K0002","L0002","M0002","N0002","O0002","P0002","Q0002")
+			a_JerTabs = array("X","H0031","J0041","K0031","L0031","M0031","N0031","O0031","P0031","Q0031")
+			a_PosTabs = array("X","H00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			a_PlyrLogoTabs = array("X","H0000","J0000","K0000","L0000","M0000","N0000","O0000","P0000","Q0000")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "4"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "YES"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A0510 "
+		Case "SL_TeamCompNotes"
+			a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","I0011","J0021","K0011","L0011","M0011","N0011","O0011","P0011","Q0011")
+			a_LNameTabs = array("X","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			a_HSTabs = array("X","I0002","J0002","K0002","L0002","M0002","N0002","O0002","P0002","Q0002")
+			a_JerTabs = array("X","I0031","J0041","K0031","L0031","M0031","N0031","O0031","P0031","Q0031")
+			a_PosTabs = array("X","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			a_PlyrLogoTabs = array("X","I0000","J0000","K0000","L0000","M0000","N0000","O0000","P0000","Q0000")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "4"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "YES"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A0510 "
+		Case "SL_SimpleScoreComp"
+			a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0101","H0201","H0301","H0401","H0501","H0601","H0701","H0801","H0901")
+			a_LNameTabs = array("X","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX")
+			a_HSTabs = array("X","H00XX","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX")
+			a_JerTabs = array("X","H00XX","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			a_PosTabs = array("X","H00XX","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			a_PlyrLogoTabs = array("X","H00XX","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			av_Rows = "C0000 "
+			a_TeamNaming = "4"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "YES"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A051X "
+		Case "FS_DefPairNHL","FS_FwdLnsNHL"
+			a_LogoTabs = array("X","B0000","B0000","B0000","B0000","B0000","B0000","B0000","B0000","B0000","B0000","B0000","B0000")
+			a_FNameTabs = array("X","H0010","I0010","J0010","K0010","L0010","M0010","N0010","O0010","P0010","Q0010","R0010","S0010")
+			a_LNameTabs = array("X","H0011","I0011","J0011","K0011","L0011","M0011","N0011","O0011","P0011","Q0011","R0011","S0011")
+			a_HSTabs = array("X","H0021","I0021","J0021","K0021","L0021","M0021","N0021","O0021","P0021","Q0021","R0021","S0021")
+			a_JerTabs = array("X","H0031","I0031","J0031","K0031","L0031","M0031","N0031","O0031","P0031","Q0031","R0031","S0031")
+			a_PosTabs = array("X","H0041","I0041","J0041","K0041","L0041","M0041","N0041","O0041","P0041","Q0041","R0041","S0041")
+			a_PlyrLogoTabs = array("X","H0098","I0098","J0098","K0098","L0098","M0098","N0098","O0098","P0098","Q0098","R0098","S0098")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "YES"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A0510 "
+		Case "FS_Strt5NBA"
+			a_LogoTabs = array("X","B0000","B0000","B0000","B0000","B0000","B0000","B0000","B0000","B0000","B0000","B0000","B0000")
+			a_FNameTabs = array("X","H0010","I0010","J0010","K0010","L0010","M0010","N0010","O0010","P0010","Q0010","R0010","S0010")
+			a_LNameTabs = array("X","H0011","I0011","J0011","K0011","L0011","M0011","N0011","O0011","P0011","Q0011","R0011","S0011")
+			a_HSTabs = array("X","H0021","I0021","J0021","K0021","L0021","M0021","N0021","O0021","P0021","Q0021","R0021","S0021")
+			a_JerTabs = array("X","H0031","I0031","J0031","K0031","L0031","M0031","N0031","O0031","P0031","Q0031","R0031","S0031")
+			a_PosTabs = array("X","H00XX","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX","R00XX","S00XX")
+			a_PlyrLogoTabs = array("X","H00XX","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX","R00XX","S00XX")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "YES"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A0510 "	
+		Case "FS_PlyrCompDouble"
+			a_LogoTabs = array("X","B0000","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0110","H0210","H0310","H0410","H0510","H0610","H0710","H0810","H0910","H1010")
+			a_LNameTabs = array("X","H0111","H0211","H0311","H0411","H0511","H0611","H0711","H0811","H0911","H1011")
+			a_HSTabs = array("X","H0121","H0221","H0321","H0421","H0521","H0621","H0721","H0821","H0921","H1021")
+			a_JerTabs = array("X","H0131","H0231","H0331","H0431","H0531","H0631","H0731","H0831","H0931","H1031")
+			a_PosTabs = array("X","H0141","H0241","H0341","H0441","H0541","H0641","H0741","H0841","H0941","H1041")
+			a_PlyrLogoTabs = array("X","H0098","H0098","H0098","H0098","H0098","H0098","H0098","H0098","H0098","H0098")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "YES"
+			a_slabThinWide = "A0510 "
+		Case "FS_PlyrCompTriple"
+			a_LogoTabs = array("X","B0000","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0110","H0210","I0110","I0210","J0110","J0210","K0110","K0210","L0110","L0210")
+			a_LNameTabs = array("X","H0111","H0211","I0111","I0211","J0111","J0211","K0111","K0211","L0111","L0211")
+			a_HSTabs = array("X","H0151","H0251","I0151","I0251","J0151","J0251","K0151","K0251","L0151","L0251")
+			a_JerTabs = array("X","H0131","H0231","I0131","I0231","J0131","J0231","K0131","K0231","L0131","L0231")
+			a_PosTabs = array("X","H0141","H0241","I0141","I0241","J0141","J0241","K0141","K0241","L0141","L0241")
+			a_PlyrLogoTabs = array("X","H0098","H0099","I0098","I0099","J0098","J0099","K0098","K0099","L0098","L0099")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "YES"
+			a_slabThinWide = "A0510 "
+		Case "FS_6HdStat"
+			a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0010","I0010","J0010","K0010","L0010","M0010","N0010","O0010","P0010","Q0010")
+			a_LNameTabs = array("X","H0011","I0011","J0011","K0011","L0011","M0011","N0011","O0011","P0011","Q0011")
+			a_HSTabs = array("X","H0021","I0021","J0021","K0021","L0021","M0021","N0021","O0021","P0021","Q0021")
+			a_JerTabs = array("X","H0031","I0031","J0031","K0031","L0031","M0031","N0031","O0031","P0031","Q0031")
+			a_PosTabs = array("X","H0041","I0041","J0041","K0041","L0041","M0041","N0041","O0041","P0041","Q0041")
+			a_PlyrLogoTabs = array("X","H0098","I0098","J0098","K0098","L0098","M0098","N0098","O0098","P0098","Q0098")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "YES"
+			a_slabThinWide = "A0510 "
+		Case "FS_2HdCatLeft","FS_3HdCatLeft","FS_4HdCatLeft","FS_5HdCatLeft"
+			a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","I0010","J0010","K0010","L0010","M0010","N0010","O0010","P0010","Q0010")
+			a_LNameTabs = array("X","I0011","J0011","K0011","L0011","M0011","N0011","O0011","P0011","Q0011")
+			a_HSTabs = array("X","I0021","J0021","K0021","L0021","M0021","N0021","O0021","P0021","Q0021")
+			a_JerTabs = array("X","I0031","J0031","K0031","L0031","M0031","N0031","O0031","P0031","Q0031")
+			a_PosTabs = array("X","I0041","J0041","K0041","L0041","M0041","N0041","O0041","P0041","Q0041")
+			a_PlyrLogoTabs = array("X","I0098","J0098","K0098","L0098","M0098","N0098","O0098","P0098","Q0098")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "YES"
+			a_Single = "NO"
+			a_runSameTeam = "YES"
+			a_slabThinWide = "A0510 "
+		Case "TB_Main"
+			a_LogoTabs = array("X","B0000","B0002")
+			a_FNameTabs = array("X","H0110","HXXX")
+			a_LNameTabs = array("X","HXXX","HXXX")
+			a_HSTabs = array("X","G0110","I0110")
+			a_JerTabs = array("X","H00XX","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			a_PosTabs = array("X","H00XX","I00XX","J00XX","K00XX","L00XX","M00XX","N00XX","O00XX","P00XX","Q00XX")
+			a_PlyrLogoTabs = array("X","G0010","I0010")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "4"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A0510 "
+		Case "M1_2to4HdStat","MO_2to4HdStat"
+			a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0005")
+			a_FNameTabs = array("X","I0100","J0100","K0100","L0100","M0100")
+			a_LNameTabs = array("X","I0110","J0110","K0110","L0110","M0110")
+			a_HSTabs = array("X","I0150","J0150","K0150","L0150","M0150")
+			a_JerTabs = array("X","H0XXX","I0XXX","J0XXX","K0XXX","L0XXX")
+			a_PosTabs = array("X","H0XXX","I0XXX","J0XXX","K0XXX","L0XXX")
+			a_PlyrLogoTabs = array("X","G0200","G0200","G0200","G0200","G0200")
+			av_Rows = "C0000-NumRows "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "YES"
+			a_Single = "NO"
+			a_runSameTeam = "YES"
+			a_slabThinWide = "A0XXX "
+		Case "M1_TeamCompare","MO_TeamCompare"
+			a_LogoTabs = array("X","B0000","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0102","H0202","H0302","H0402","H0502","H0602","H0702","H0802","H0902","H1002")
+			a_LNameTabs = array("X","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX")
+			a_HSTabs = array("X","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX")
+			a_JerTabs = array("X","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX")
+			a_PosTabs = array("X","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX")
+			a_PlyrLogoTabs = array("X","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX","H00XX")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "5"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A051X "
+		Case "M1_Stat","MO_Stat","M1_PlyrTeamNotes","MO_PlyrTeamNotes","M1_PlyrTeamNotes2","MO_PlyrTeamNotes2"
+			a_LogoTabs = array("X","B0000","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0101","H0201","H0301","H0401","H0501","H0601","H0701","H0801","H0901","H1001")
+			a_LNameTabs = array("X","H0102","H0202","H0302","H0402","H0502","H0602","H0702","H0802","H0902","H1002")
+			a_HSTabs = array("X","H0021","H0021","H0021","H0021","H0021","H0021","H0021","H0021","H0021","H0021")
+			a_JerTabs = array("X","H0104","H0104","H0104","H0104","H0104","H0104","H0104","H0104","H0104","H0104")
+			a_PosTabs = array("X","H0105","H0105","H0105","H0105","H0105","H0105","H0105","H0105","H0105","H0105")
+			a_PlyrLogoTabs = array("X","H0098","H0098","H0098","H0098","H0098","H0098","H0098","H0098","H0098","H0098")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "3"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A051X "
+		Case "M1_Standings","MO_Standings","M1_Standings2Col","MO_Standings2Col","FS_Stnd"
+			a_LogoTabs = array("X","B0000","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0110","H0210","H0310","H0410","H0510","H0610","H0710","H0810","H0910","H1010")
+			a_LNameTabs = array("X","H01XX","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX","H10XX")
+			a_HSTabs = array("X","H01XX","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX","H10XX")
+			a_JerTabs = array("X","H01XX","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX","H10XX")
+			a_PosTabs = array("X","H01XX","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX","H10XX")
+			a_PlyrLogoTabs = array("X","H01XX","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX","H10XX")
+			av_Rows = "C0000 "
+			a_TeamNaming = "5"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A051X "
+		Case "M1_MosaicSchedule","MO_MosaicSchedule"
+			a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0210","I0210","J0210","K0210","L0210","M0210","N0210","O0210","P0210")
+			a_LNameTabs = array("X","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX","H10XX")
+			a_HSTabs = array("X","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX","H10XX")
+			a_JerTabs = array("X","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX","H10XX")
+			a_PosTabs = array("X","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX","H10XX")
+			a_PlyrLogoTabs = array("X","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX","H10XX")
+			av_Rows = "H0000 "
+			a_TeamNaming = "5"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A051X "
+		Case "WG_2PlyrNote","WGM_2PlyrNote"
+			a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009")
+			a_FNameTabs = array("X","H0110","H0210","H0310","H0410","H0510","H0610","H0710","H0810","H0910")
+			a_LNameTabs = array("X","H01XX","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX")
+			a_HSTabs = array("X","H01XX","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX")
+			a_JerTabs = array("X","H01XX","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX")
+			a_PosTabs = array("X","H01XX","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX")
+			a_PlyrLogoTabs = array("X","H01XX","H02XX","H03XX","H04XX","H05XX","H06XX","H07XX","H08XX","H09XX")
+			av_Rows = "C0000 "
+			a_TeamNaming = "4"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "YES"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A0510 "
+		Case "FS_ScoreMultiNBA"
+			cv_RowCountA = TrioCmd("page:get_property H0100")
+			if cv_RowCountA = "2" then
+				a_RowVer = "4"
+			elseif cv_RowCountA = "3" then
+				a_RowVer = "6"
+			elseif cv_RowCountA = "4" then
+				a_RowVer = "8"
+			elseif cv_RowCountA = "5" then
+				a_RowVer = "10"
+			elseif cv_RowCountA = "6" then
+				a_RowVer = "12"
+			end if
+			a_LogoTabs = array("X","B0000","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009","B0010","B0011")
+			a_FNameTabs = array("X","H0115","H0125","I0115","I0125","J0115","J0125","K0115","K0125","L0115","L0125","M0115","M0125")
+			a_LNameTabs = array("X","H0XXX","H0XXX","H0XXX","H0XXX","H0XXX","H0XXX","H0XXX","H0XXX","H0XXX","H0XXX","H0XXX","H0XXX")
+			a_HSTabs = array("X","H0XXX","I0XXX","J0XXX","K0XXX","L0XXX","M0XXX","N0XXX","O0XXX","P0XXX","Q0XXX","P0XXX","Q0XXX")
+			a_JerTabs = array("X","H0XXX","I0XXX","J0XXX","K0XXX","L0XXX","M0XXX","N0XXX","O0XXX","P0XXX","Q0XXX","P0XXX","Q0XXX")
+			a_PosTabs = array("X","H0XXX","I0XXX","J0XXX","K0XXX","L0XXX","M0XXX","N0XXX","O0XXX","P0XXX","Q0XXX","P0XXX","Q0XXX")
+			a_PlyrLogoTabs = array("X","H0XXX","I0XXX","J0XXX","K0XXX","L0XXX","M0XXX","N0XXX","O0XXX","P0XXX","Q0XXX","P0XXX","Q0XXX")
+			av_Rows = "CXXXX "
+			a_TeamNaming = "5"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+			a_LeagueLogo = "NO"
+			a_Single = "NO"
+			a_runSameTeam = "NO"
+			a_slabThinWide = "A0510 "
+		Case "FS_10HdStat"
+			cv_RowCountA = TrioCmd("page:get_property A0000")
+			cv_RowCountB = TrioCmd("page:get_property A0001")
+			if cv_RowCountA = "1" AND cv_RowCountB = "1" then
+				a_RowVer = "6"
+			elseif cv_RowCountA = "1" AND cv_RowCountB = "2" then
+				a_RowVer = "7"
+			elseif cv_RowCountA = "2" AND cv_RowCountB = "2" then
+				a_RowVer = "8"
+			elseif cv_RowCountA = "2" AND cv_RowCountB = "3" then
+				a_RowVer = "9"
+			elseif cv_RowCountA = "3" AND cv_RowCountB = "3" then
+				a_RowVer = "10"
+			end if
+			
+			Select Case a_RowVer
+				Case "6"
+					a_LogoTabs = array("X","B0001","B0002","B0003","B0006","B0007","B0008")
+					a_FNameTabs = array("X","H0240","I0240","J0240","M0240","N0240","O0240")
+					a_LNameTabs = array("X","H0011","I0011","J0011","M0011","N0011","O0011")
+					a_HSTabs = array("X","H0300","I0300","J0300","M0300","N0300","O0300")
+					a_JerTabs = array("X","H0220","I0220","J0220","M0220","N0220","O0220")
+					a_PosTabs = array("X","H0230","I0230","J0230","M0230","N0230","O0230")
+					a_PlyrLogoTabs = array("X","H0100","I0100","J0100","M0100","N0100","O0100")
+					av_Rows = "CXXXX "
+					a_TeamNaming = "4"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+					a_LeagueLogo = "NO"
+					a_Single = "NO"
+					a_runSameTeam = "YES"
+					a_slabThinWide = "A0510 "
+				Case "7"
+					a_LogoTabs = array("X","B0001","B0002","B0003","B0006","B0007","B0008","B0009")
+					a_FNameTabs = array("X","H0240","I0240","J0240","M0240","N0240","O0240","P0240")
+					a_LNameTabs = array("X","H0011","I0011","J0011","M0011","N0011","O0011","P0011")
+					a_HSTabs = array("X","H0300","I0300","J0300","M0300","N0300","O0300","P0300")
+					a_JerTabs = array("X","H0220","I0220","J0220","M0220","N0220","O0220","P0220")
+					a_PosTabs = array("X","H0230","I0230","J0230","M0230","N0230","O0230","P0230")
+					a_PlyrLogoTabs = array("X","H0100","I0100","J0100","M0100","N0100","O0100","P0100")
+					av_Rows = "CXXXX "
+					a_TeamNaming = "4"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+					a_LeagueLogo = "NO"
+					a_Single = "NO"
+					a_runSameTeam = "YES"
+					a_slabThinWide = "A0510 "
+				Case "8"
+					a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0006","B0007","B0008","B0009")
+					a_FNameTabs = array("X","H0240","I0240","J0240","K0240","M0240","N0240","O0240","P0240")
+					a_LNameTabs = array("X","H0011","I0011","J0011","K0011","M0011","N0011","O0011","P0011")
+					a_HSTabs = array("X","H0300","I0300","J0300","K0300","M0300","N0300","O0300","P0300")
+					a_JerTabs = array("X","H0220","I0220","J0220","K0220","M0220","N0220","O0220","P0220")
+					a_PosTabs = array("X","H0230","I0230","J0230","K0230","M0230","N0230","O0230","P0230")
+					a_PlyrLogoTabs = array("X","H0100","I0100","J0100","K0100","M0100","N0100","O0100","P0100")
+					av_Rows = "CXXXX "
+					a_TeamNaming = "4"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+					a_LeagueLogo = "NO"
+					a_Single = "NO"
+					a_runSameTeam = "YES"
+					a_slabThinWide = "A0510 "
+				Case "9"
+					a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0006","B0007","B0008","B0009","B0010")
+					a_FNameTabs = array("X","H0240","I0240","J0240","K0240","M0240","N0240","O0240","P0240","Q0240")
+					a_LNameTabs = array("X","H0011","I0011","J0011","K0011","M0011","N0011","O0011","P0011","Q0011")
+					a_HSTabs = array("X","H0300","I0300","J0300","K0300","M0300","N0300","O0300","P0300","Q0300")
+					a_JerTabs = array("X","H0220","I0220","J0220","K0220","M0220","N0220","O0220","P0220","Q0220")
+					a_PosTabs = array("X","H0230","I0230","J0230","K0230","M0230","N0230","O0230","P0230","Q0230")
+					a_PlyrLogoTabs = array("X","H0100","I0100","J0100","K0100","M0100","N0100","O0100","P0100","Q0100")
+					av_Rows = "CXXXX "
+					a_TeamNaming = "4"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+					a_LeagueLogo = "NO"
+					a_Single = "NO"
+					a_runSameTeam = "YES"
+					a_slabThinWide = "A0510 "
+				Case "10"
+					a_LogoTabs = array("X","B0001","B0002","B0003","B0004","B0005","B0006","B0007","B0008","B0009","B0010")
+					a_FNameTabs = array("X","H0240","I0240","J0240","K0240","L0240","M0240","N0240","O0240","P0240","Q0240")
+					a_LNameTabs = array("X","H0011","I0011","J0011","K0011","L0011","M0011","N0011","O0011","P0011","Q0011")
+					a_HSTabs = array("X","H0300","I0300","J0300","K0300","L0300","M0300","N0300","O0300","P0300","Q0300")
+					a_JerTabs = array("X","H0220","I0220","J0220","K0220","L0220","M0220","N0220","O0220","P0220","Q0220")
+					a_PosTabs = array("X","H0230","I0230","J0230","K0230","L0230","M0230","N0230","O0230","P0230","Q0230")
+					a_PlyrLogoTabs = array("X","H0100","I0100","J0100","K0100","L0100","M0100","N0100","O0100","P0100","Q0100")
+					av_Rows = "CXXXX "
+					a_TeamNaming = "4"  '-> 1 = Market  2 = Nickname  3 = Market & Nickname  4 = Market+Nickname  5 = Initial Name
+					a_LeagueLogo = "NO"
+					a_Single = "NO"
+					a_runSameTeam = "YES"
+					a_slabThinWide = "A0510 "
+				Case Else
+					Nachos = "GOOD"
+			End Select
+		Case Else
+			a_Date = Date
+			v_Date = Replace(a_Date, "/", "-")
+			a_ScriptLogNumber = "1"
+			Call m_JordanScriptLog(v_Date,a_ScriptLogNumber,sVersion)
+	End Select
+End Function
+
+'--------PARSE NUMBER OF PLAYER/TEAMS/ROWS TO EXECUTE--------
+Function m_Rows(a_Rows,a_RowVer)
+	Select Case Name
+		Case "L3_Bio","L3_PlyrNote","L3_PlyrStat","L3_TeamPlyrNotes","L3_TeamPlyrStat","L3_TmPlyrStatLine","L3_GenTxt3Line","L3_GenTxt","FS_PlyrNote","FS_PlyrStat","SL_PlyrStats","SL_PlyrStats10","NU_PlayerName","NU_PlyrSnglStat","SL_GenTxt","WG_GenTxt","WGM_GenTxt_Matrox","WG_PlyrStats","WGM_PlyrStats_Matrox","M1_Stat","MO_Stat","M1_PlyrTeamNotes","MO_PlyrTeamNotes","M1_PlyrTeamNotes2","MO_PlyrTeamNotes2"
+			a_Rows = v_Rows
+		Case "FS_PlyrComp","FS_2HeadComp","FS_2TeamNotes","FS_2HdNotes","FS_PlyrCompRank","FS_2HdCatLeft","FS_StrtGoalNHL","FS_StrtGoalComp","L3_SplitScreen","TB_Main","L3_Score","NU_ScoreNBA","NU_ScoreNHL","L3_TitleCard","L3_TitleRejoin","FS_ScoreNBA","FS_ScoreNHL","SL_PlyrComparison","SL_PlyrComparisonRank","SL_TeamCompNotes","M1_TeamCompare","MO_TeamCompare","WG_PlyrComparison","WGM_PlyrComparison_Matrox"
+			a_Rows = v_Rows
+		Case "FS_3HdStat","FS_3HdCatLeft","FS_3HdNotes"
+			a_Rows = v_Rows
+		Case "FS_4HdStat","FS_4HdCatLeft","FS_PlyrCompDouble","FS_4HdNotes"
+			a_Rows = v_Rows
+		Case "FS_5HdStat","FS_5HdCatLeft","FS_Strt5NBA","FS_5HdNotes"
+			a_Rows = v_Rows
+		Case "FS_6HdStat","FS_PlyrCompTriple","FS_DefPairNHL"
+			a_Rows = v_Rows
+		Case "FS_FwdLnsNHL"
+			a_Rows = v_Rows
+		Case "FS_ScoreMultiNBA"
+			a_Rows = v_Rows
+		Case "FS_10HdStat"
+			v_RowCountA = TrioCmd("page:get_property A0000")
+			v_RowCountB = TrioCmd("page:get_property A0001")
+			if v_RowCountA = "1" AND v_RowCountB = "1" then
+				a_Rows = v_Rows
+			elseif v_RowCountA = "1" AND v_RowCountB = "2" then
+				a_Rows = v_Rows
+			elseif v_RowCountA = "2" AND v_RowCountB = "2" then
+				a_Rows = v_Rows
+			elseif v_RowCountA = "2" AND v_RowCountB = "3" then
+				a_Rows = v_Rows
+			elseif v_RowCountA = "3" AND v_RowCountB = "3" then
+				a_Rows = v_Rows
+			end if
+		Case Else
+			Tacos = "GOOD"
+	End Select
+
+End Function
+
+'--------PARSE NAMES & HS PATHS--------
+Function m_Headshot(a_fnTeam,a_fnSearch,nv_path,nv_fnList,v_fnList,v_plyrArray,v_initial,a_fnLeague,a_LoopPosition,a_TBempty)
+	
+	on error resume next
+
+	' ***** Establishes League *******
+	
+	cv_league = TrioCmd("page:get_property A0100")
+
+		if cv_league = "" then
+			a_fnLeague = inputbox("Tabfield (A0100) League is empty" & vbCrlf & vbCrlf & "Enter League:" & vbCrlf & "Example:   NHL","F5-SINGLE PLAYER/TEAM PLUGIN - LEAGUE","")
+			TrioCmd("page:set_property A0100 " & UCase(a_fnLeague))
+		else
+			a_fnLeague = cv_league
+		end if
+
+	
+	' ***** Asks What Team & Player for Headshot Selection *****
+	a_TBempty = "NO"
+	a_fnTeam = inputbox("Enter Team " & a_LoopPosition & "'s Tricode" & vbCrlf & vbCrlf & "Example:   DET","F5-SINGLE PLAYER/TEAM PLUGIN - TRICODE","")	
+
+	if a_fnTeam = "" then
+		a_TBempty = "YES"
+		Exit Function
+	else
+		a_fnSearch = inputbox("Search Player " & a_LoopPosition & "'s Name on - " & a_fnTeam & vbCrlf & "(Leave blank to get TEAM info)" & vbCrlf & vbCrlf & "This will find the closest match and path the headshot, name & logo","F5-SINGLE PLAYER/TEAM PLUGIN - PLAYER SEARCH","")
+
+			'***** Attempts to Find Closest Match & Path Headshot ******
+
+			Set fso = CreateObject("Scripting.FileSystemObject")
+			Set fldr = fso.GetFolder("E:\EDRIVE\" & UCase(a_fnLeague) & "\HEADSHOTS\" & UCase(a_fnTeam) & "\")
+			Set flcoll = fldr.Files	
+			nv_path = "E:\EDRIVE\" & UCase(a_fnLeague) & "\HEADSHOTS\" & UCase(a_fnTeam) & "\"
+
+			For Each f in flcoll
+				If InStr(UCase(f.Name), UCase(a_fnSearch)) > 0 Then
+					nv_fnList = f.Name
+				End If
+			Next
+
+			v_fnList = replace(nv_fnList, "_960.png", "")
+			v_plyrArray = split(v_fnList, "_")
+			v_initial = left(v_plyrArray(2), 1)	
+	end if
+End Function
+
+Function m_HeadshotSingle(a_fnTeam,a_fnSearch,nv_path,nv_fnList,v_fnList,v_plyrArray,v_initial,a_fnLeague,a_fnJersey,a_LoopPosition,a_TBempty)
+	
+	on error resume next
+
+	' ***** Establishes League *******
+	
+	cv_league = TrioCmd("page:get_property A0100")
+
+		if cv_league = "" then
+			a_fnLeague = inputbox("Tabfield (A0100) League is empty" & vbCrlf & vbCrlf & "Enter League:" & vbCrlf & "Example:   NHL","F5-SINGLE PLAYER/TEAM PLUGIN - LEAGUE","")
+			TrioCmd("page:set_property A0100 " & UCase(a_fnLeague))
+		else
+			a_fnLeague = cv_league
+		end if
+
+	
+	' ***** Asks What Team & Player for Headshot Selection *****
+	a_TBempty = "NO"
+	cv_fnTeam = TrioCmd("page:get_property B0000")
+	
+		if cv_fnTeam = "" then
+			a_fnTeam = inputbox("Enter Team " & a_LoopPosition & "'s Tricode" & vbCrlf & vbCrlf & "Example:   DET","F5-SINGLE PLAYER/TEAM PLUGIN - TRICODE","")
+			TrioCmd("page:set_property B0000 " & UCase(a_fnTeam))
+			TrioCmd("page:set_property A1000 " & UCase(a_fnTeam))
+		else
+			a_fnTeam = cv_fnTeam
+		end if
+
+	if a_fnTeam = "" then
+		a_TBempty = "YES"
+		Exit Function
+	else
+		a_fnSearch = inputbox("Search Player " & a_LoopPosition & "'s Name on - " & a_fnTeam & vbCrlf & "(Leave blank to get TEAM info)" & vbCrlf & vbCrlf & "This will find the closest match and path the headshot, name & logo","F5-SINGLE PLAYER/TEAM PLUGIN - PLAYER SEARCH","")
+
+			'***** Attempts to Find Closest Match & Path Headshot ******
+
+			Set fso = CreateObject("Scripting.FileSystemObject")
+			Set fldr = fso.GetFolder("E:\EDRIVE\" & UCase(a_fnLeague) & "\HEADSHOTS\" & UCase(a_fnTeam) & "\")
+			Set flcoll = fldr.Files	
+			nv_path = "E:\EDRIVE\" & UCase(a_fnLeague) & "\HEADSHOTS\" & UCase(a_fnTeam) & "\"
+
+			For Each f in flcoll
+				If InStr(UCase(f.Name), UCase(a_fnSearch)) > 0 Then
+					nv_fnList = f.Name
+				End If
+			Next
+
+			v_fnList = replace(nv_fnList, "_960.png", "")
+			v_plyrArray = split(v_fnList, "_")
+			v_initial = left(v_plyrArray(2), 1)	
+	end if
+	
+	Select Case Name
+		Case "FS_Strt5NBA"
+			a_fnJersey = inputbox("Enter Player " & a_LoopPosition & "'s Jersey #","F5-SINGLE PLAYER/TEAM PLUGIN - JERSEY","")
+		Case Else
+			Pop = "SWEET"
+	End Select
+End Function
+
+'--------SET PLAYER/TEAM INFO TO TABFIELDS--------
+Function m_Player(a_TBLeftName,a_TBRightName)
+	Select Case a_TeamNaming
+		Case "3"
+			TrioCmd("page:set_property " & v_LTab & " " & Ucase(a_fnTeam))
+			TrioCmd("page:set_property " & v_LNTab & " " & v_plyrArray(1))
+			TrioCmd("page:set_property " & v_FNTab & " " & v_plyrArray(2))
+			TrioCmd("page:set_property " & v_JTab & " " & a_blank)
+			TrioCmd("page:set_property " & v_PTab & " " & a_blank)
+			TrioCmd("page:set_property " & v_HSTab & " " & nv_path & nv_fnList)
+			TrioCmd("page:set_property " & v_PLTab & " " & "2")
+		Case "4"
+			TrioCmd("page:set_property " & v_LTab & " " & Ucase(a_fnTeam))
+			'TrioCmd("page:set_property " & v_LNTab & " " & v_plyrArray(1))
+			TrioCmd("page:set_property " & v_FNTab & " " & v_plyrArray(2) & " " & v_plyrArray(1))
+			TrioCmd("page:set_property " & v_JTab & " " & a_blank)
+			TrioCmd("page:set_property " & v_PTab & " " & a_blank)
+			TrioCmd("page:set_property " & v_HSTab & " " & nv_path & nv_fnList)
+			TrioCmd("page:set_property " & v_PLTab & " " & "2")
+			a_TBplyrName = (v_plyrArray(2) & " " & v_plyrArray(1))
+		Case "5"
+			TrioCmd("page:set_property " & v_LTab & " " & Ucase(a_fnTeam))
+			'TrioCmd("page:set_property " & v_LNTab & " " & v_plyrArray(1))
+			TrioCmd("page:set_property " & v_FNTab & " " & Left(v_plyrArray(2),1) & "." & " " & v_plyrArray(1))
+			TrioCmd("page:set_property " & v_JTab & " " & a_blank)
+			TrioCmd("page:set_property " & v_PTab & " " & a_blank)
+			TrioCmd("page:set_property " & v_HSTab & " " & nv_path & nv_fnList)
+			TrioCmd("page:set_property " & v_PLTab & " " & "2")
+		Case else
+			Broccoli = "GROSS"
+	End Select
+
+	Select Case a_LeagueLogo
+		Case "YES"
+			TrioCmd("page:set_property " & "B0000 " & a_globalLeagueSet)
+		Case "NO"
+			Sugar = "SWEET"
+	End Select
+	
+	Select Case Name
+		Case "FS_Strt5NBA"
+			TrioCmd("page:set_property " & v_JTab & " " & a_fnJersey)
+		Case "TB_Main"
+			if v_LTab = "B0000" then
+				TrioCmd("page:set_property " & v_PLTab & " " & "4")
+				a_TBLeftName = a_TBplyrName
+			end if
+			if v_LTab = "B0002" then
+				TrioCmd("page:set_property " & v_PLTab & " " & "4")
+				a_TBRightName = a_TBplyrName
+			end if
+		Case Else
+			Pop = "SWEET"
+	End Select
+	
+	a_TBLeftName = a_TBLeftName
+	a_TBRightName = a_TBRightName
+	
+	TrioCmd("trio:sleep 5")
+	TrioCmd("gui:error_message You Have Run The ----------->   Player F5 Function For " & Ucase(a_fnTeam) & " - " & v_plyrArray(2) & " " & v_plyrArray(1))
+	TrioCmd("gui:set_statusbar_color 0 0 200")	
+End Function
+
+Function m_Team(a_TBLeftName,a_TBRightName)
+	v_League = TrioCmd("page:get_property A0100")
+	if v_League = "" then
+		i_League = inputbox("Tabfield (A0100) League is empty" & vbCrlf & vbCrlf & "Enter League:" & vbCrlf & "Example:   NHL","F5-SINGLE PLAYER/TEAM PLUGIN - LEAGUE","")
+		TrioCmd("page:set_property A0100 " & UCase(i_League))
+	else
+		v_League = TrioCmd("page:get_property A0100")
+	end if
+	
+	cv_Tricode = UCase(a_fnTeam)
+	
+	if v_League = "MLB" then	
+		Select Case cv_Tricode
+			Case "ARI"
+				nv_Market = "ARIZONA"
+				nv_Nickname = "DIAMONDBACKS"
+			Case "ATL"
+				nv_Market = "ATLANTA"
+				nv_Nickname = "BRAVES"
+			Case "BAL"
+				nv_Market = "BALTIMORE"
+				nv_Nickname = "ORIOLES"
+			Case "BOS"
+				nv_Market = "BOSTON"
+				nv_Nickname = "RED SOX"
+			Case "CHC"
+				nv_Market = "CHICAGO"
+				nv_Nickname = "CUBS"
+			Case "CHW"
+				nv_Market = "CHICAGO"
+				nv_Nickname = "WHITE SOX"
+			Case "CIN"
+				nv_Market = "CINCINNATI"
+				nv_Nickname = "REDS"	
+			Case "CLE"
+				nv_Market = "CLEVELAND"
+				nv_Nickname = "INDIANS"	
+			Case "COL"
+				nv_Market = "COLORADO"
+				nv_Nickname = "ROCKIES"
+			Case "DET"
+				nv_Market = "DETROIT"
+				nv_Nickname = "TIGERS"
+			Case "HOU"
+				nv_Market = "HOUSTON"
+				nv_Nickname = "ASTROS"
+			Case "KC"
+				nv_Market = "KANSAS CITY"
+				nv_Nickname = "ROYALS"
+			Case "LAA"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname = "ANGELS"
+			Case "LAD"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname = "DODGERS"
+			Case "MIA"
+				nv_Market = "MIAMI"
+				nv_Nickname = "MARLINS"
+			Case "MIL"
+				nv_Market = "MILWAUKEE"
+				nv_Nickname = "BREWERS"
+			Case "MIN"
+				nv_Market = "MINNESOTA"
+				nv_Nickname = "TWINS"
+			Case "NYM"
+				nv_Market = "NEW YORK"
+				nv_Nickname = "METS"	
+			Case "NYY"
+				nv_Market = "NEW YORK"
+				nv_Nickname = "YANKEES"
+			Case "OAK"
+				nv_Market = "OAKLAND"
+				nv_Nickname = "ATHLETICS"
+			Case "PHI"
+				nv_Market = "PHILADELPHIA"
+				nv_Nickname = "PHILLIES"
+			Case "PIT"
+				nv_Market = "PITTSBURGH"
+				nv_Nickname = "PIRATES"
+			Case "SD"
+				nv_Market = "SAN DIEGO"
+				nv_Nickname = "PADRES"
+			Case "SEA"
+				nv_Market = "SEATTLE"
+				nv_Nickname = "MARINERS"
+			Case "SF"
+				nv_Market = "SAN FRANCISCO"
+				nv_Nickname = "GIANTS"
+			Case "STL"
+				nv_Market = "ST. LOUIS"
+				nv_Nickname = "CARDINALS"
+			Case "TB"
+				nv_Market = "TAMPA BAY"
+				nv_Nickname = "RAYS"
+			Case "TEX"
+				nv_Market = "TEXAS"
+				nv_Nickname = "RANGERS"
+			Case "TOR"
+				nv_Market = "TORONTO"
+				nv_Nickname = "BLUE JAYS"
+			Case "WSH"
+				nv_Market = "WASHINGTON"
+				nv_Nickname = "NATIONALS"
+			Case Else
+				'nv_Market = ""
+				'nv_Nickname = ""
+		End Select
+	elseif v_League = "NBA" then	
+		Select Case cv_Tricode
+			Case "ATL"
+				nv_Market = "ATLANTA"
+				nv_Nickname = "HAWKS"
+			Case "BOS"
+				nv_Market = "BOSTON"
+				nv_Nickname = "CELTICS"
+			Case "BKN"
+				nv_Market = "BROOKLYN"
+				nv_Nickname = "NETS"
+			Case "CHA"
+				nv_Market = "CHARLOTTE"
+				nv_Nickname = "HORNETS"
+			Case "CHI"
+				nv_Market = "CHICAGO"
+				nv_Nickname = "BULLS"
+			Case "CLE"
+				nv_Market = "CLEVELAND"
+				nv_Nickname = "CAVALIERS"
+			Case "DAL"
+				nv_Market = "DALLAS"
+				nv_Nickname = "MAVERICKS"	
+			Case "DEN"
+				nv_Market = "DENVER"
+				nv_Nickname = "NUGGETS"	
+			Case "DET"
+				nv_Market = "DETROIT"
+				nv_Nickname = "PISTONS"
+			Case "GS"
+				nv_Market = "GOLDEN STATE"
+				nv_Nickname = "WARRIORS"
+			Case "HOU"
+				nv_Market = "HOUSTON"
+				nv_Nickname = "ROCKETS"
+			Case "IND"
+				nv_Market = "INDIANA"
+				nv_Nickname = "PACERS"
+			Case "LAC"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname = "CLIPPERS"
+			Case "LAL"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname = "LAKERS"
+			Case "MEM"
+				nv_Market = "MEMPHIS"
+				nv_Nickname = "GRIZZLIES"
+			Case "MIA"
+				nv_Market = "MIAMI"
+				nv_Nickname = "HEAT"
+			Case "MIL"
+				nv_Market = "MILWAUKEE"
+				nv_Nickname = "BUCKS"
+			Case "MIN"
+				nv_Market = "MINNESOTA"
+				nv_Nickname = "TIMBERWOLVES"	
+			Case "NO"
+				nv_Market = "NEW ORLEANS"
+				nv_Nickname = "PELICANS"
+			Case "NY"
+				nv_Market = "NEW YORK"
+				nv_Nickname = "KNICKS"
+			Case "ORL"
+				nv_Market = "ORLANDO"
+				nv_Nickname = "MAGIC"
+			Case "PHI"
+				nv_Market = "PHILADELPHIA"
+				nv_Nickname = "76ers"
+			Case "PHX"
+				nv_Market = "PHOENIX"
+				nv_Nickname = "SUNS"
+			Case "POR"
+				nv_Market = "PORTLAND"
+				nv_Nickname = "TRAIL BLAZERS"
+			Case "SAC"
+				nv_Market = "SACRAMENTO"
+				nv_Nickname = "KINGS"
+			Case "SA"
+				nv_Market = "SAN ANTONIO"
+				nv_Nickname = "SPURS"
+			Case "OKC"
+				nv_Market = "OKLAHOMA CITY"
+				nv_Nickname = "THUNDER"
+			Case "TOR"
+				nv_Market = "TORONTO"
+				nv_Nickname = "RAPTORS"
+			Case "UTAH"
+				nv_Market = "UTAH"
+				nv_Nickname = "JAZZ"
+			Case "WSH","WAS"
+				nv_Market = "WASHINGTON"
+				nv_Nickname = "WIZARDS"
+			Case Else
+				'nv_Market = ""
+				'nv_Nickname = ""
+		End Select
+	elseif v_League = "NHL" then	
+		Select Case cv_Tricode
+			Case "ANA"
+				nv_Market = "ANAHEIM"
+				nv_Nickname = "DUCKS"
+			Case "ARI"
+				nv_Market = "ARIZONA"
+				nv_Nickname = "COYOTES"
+			Case "BOS"
+				nv_Market = "BOSTON"
+				nv_Nickname = "BRUINS"
+			Case "BUF"
+				nv_Market = "BUFFALO"
+				nv_Nickname = "SABRES"
+			Case "CGY"
+				nv_Market = "CALGARY"
+				nv_Nickname = "FLAMES"
+			Case "CAR"
+				nv_Market = "CAROLINA"
+				nv_Nickname = "HURRICANES"
+			Case "CHI"
+				nv_Market = "CHICAGO"
+				nv_Nickname = "BLACKHAWKS"	
+			Case "COL"
+				nv_Market = "COLORADO"
+				nv_Nickname = "AVALANCHE"	
+			Case "CBJ"
+				nv_Market = "COLUMBUS"
+				nv_Nickname = "BLUE JACKETS"
+			Case "DAL"
+				nv_Market = "DALLAS"
+				nv_Nickname = "STARS"
+			Case "DET"
+				nv_Market = "DETROIT"
+				nv_Nickname = "RED WINGS"
+			Case "EDM"
+				nv_Market = "EDMONTON"
+				nv_Nickname = "OILERS"
+			Case "FLA"
+				nv_Market = "FLORIDA"
+				nv_Nickname = "PANTHERS"
+			Case "LA"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname = "KINGS"
+			Case "MIN"
+				nv_Market = "MINNESOTA"
+				nv_Nickname = "WILD"
+			Case "MTL"
+				nv_Market = "MONTREAL"
+				nv_Nickname = "CANADIENS"
+			Case "NSH"
+				nv_Market = "NASHVILLE"
+				nv_Nickname = "PREDATORS"
+			Case "NJ"
+				nv_Market = "NEW JERSEY"
+				nv_Nickname = "DEVILS"	
+			Case "NYI"
+				nv_Market = "NEW YORK"
+				nv_Nickname = "ISLANDERS"
+			Case "NYR"
+				nv_Market = "NEW YORK"
+				nv_Nickname = "RANGERS"
+			Case "OTT"
+				nv_Market = "OTTAWA"
+				nv_Nickname = "SENATORS"
+			Case "PHI"
+				nv_Market = "PHILADELPHIA"
+				nv_Nickname = "FLYERS"
+			Case "PIT"
+				nv_Market = "PITTSBURGH"
+				nv_Nickname = "PENGUINS"
+			Case "SJ"
+				nv_Market = "SAN JOSE"
+				nv_Nickname = "SHARKS"
+			Case "SEA"
+				nv_Market = "SEATTLE"
+				nv_Nickname = "KRAKEN"
+			Case "STL"
+				nv_Market = "ST. LOUIS"
+				nv_Nickname = "BLUES"
+			Case "TB"
+				nv_Market = "TAMPA BAY"
+				nv_Nickname = "LIGHTNING"
+			Case "TOR"
+				nv_Market = "TORONTO"
+				nv_Nickname = "MAPLE LEAFS"
+			Case "VGK"
+				nv_Market = "VEGAS"
+				nv_Nickname = "GOLDEN KNIGHTS"
+			Case "VAN"
+				nv_Market = "VANCOUVER"
+				nv_Nickname = "CANUCKS"
+			Case "WSH"
+				nv_Market = "WASHINGTON"
+				nv_Nickname = "CAPITALS"
+			Case "WPG"
+				nv_Market = "WINNIPEG"
+				nv_Nickname = "JETS"	
+			Case Else
+				'nv_Market = ""
+				'nv_Nickname = ""
+		End Select
+	else
+		Exit Function
+	end if
+	
+	TrioCmd("page:set_property " & v_LTab & " " & Ucase(a_fnTeam))
+	
+	Select Case a_LeagueLogo
+		Case "YES"
+			TrioCmd("page:set_property " & "B0000 " & v_League)
+		Case "NO"
+			Sugar = "SWEET"
+	End Select
+	
+	Select Case Name
+		Case "TB_Main"
+			a_TeamNaming = "2"
+		Case Else
+			a_TeamNaming = a_TeamNaming
+	End Select
+	
+	Select Case a_TeamNaming
+		Case "1"
+			TrioCmd("page:set_property " & v_FNTab & " " & nv_Market)
+			TrioCmd("page:set_property " & v_JTab & " " & a_blank)
+			TrioCmd("page:set_property " & v_PTab & " " & a_blank)
+		Case "2"
+			TrioCmd("page:set_property " & v_FNTab & " " & nv_Market & " " & nv_Nickname)
+			TrioCmd("page:set_property " & v_JTab & " " & a_blank)
+			TrioCmd("page:set_property " & v_PTab & " " & a_blank)
+			a_TBteamName = (nv_Market & " " & nv_Nickname)
+		Case "3"
+			TrioCmd("page:set_property " & v_FNTab & " " & nv_Market)
+			TrioCmd("page:set_property " & v_LNTab & " " & nv_Nickname)
+			TrioCmd("page:set_property " & v_JTab & " " & a_blank)
+			TrioCmd("page:set_property " & v_PTab & " " & a_blank)
+		Case "4"
+			TrioCmd("page:set_property " & v_FNTab & " " & nv_Nickname)
+			'TrioCmd("page:set_property " & v_LNTab & " " & a_blank)
+			TrioCmd("page:set_property " & v_JTab & " " & a_blank)
+			TrioCmd("page:set_property " & v_PTab & " " & a_blank)
+		Case "5"
+			TrioCmd("page:set_property " & v_FNTab & " " & nv_Nickname)
+			TrioCmd("page:set_property " & v_JTab & " " & a_blank)
+			TrioCmd("page:set_property " & v_PTab & " " & a_blank)
+		Case else
+			Broccoli = "GROSS"
+	End Select
+	
+	Select Case Name
+		Case "TB_Main"
+			if v_LTab = "B0000" then
+				TrioCmd("page:set_property " & v_PLTab & " " & "2")
+				a_TBLeftName = a_TBteamName
+			end if
+			if v_LTab = "B0002" then
+				TrioCmd("page:set_property " & v_PLTab & " " & "2")
+				a_TBRightName = a_TBteamName
+			end if
+		Case Else
+			TrioCmd("page:set_property " & v_PLTab & " " & "0")
+	End Select
+	
+	a_TBLeftName = a_TBLeftName
+	a_TBRightName = a_TBRightName
+	
+	TrioCmd("trio:sleep 5")
+	TrioCmd("gui:error_message You Have Run The ----------->   Team F5 Function For " & "- THE " & nv_Market & " " & nv_Nickname)
+	TrioCmd("gui:set_statusbar_color 115 0 200")
+End Function
+
+'--------TOPIC BAR CONTROLS--------
+Function m_TopicBarControl(a_TBplyrVS,a_TBteamVS)
+	a_LeftPlyrOrTeam = TrioCmd("page:get_property G0010")
+	a_RightPlyrOrTeam = TrioCmd("page:get_property I0010")
+	if a_TBempty = "YES" Then
+		TrioCmd("page:set_property I0010 " & "0")
+	end if
+	
+	if a_LeftPlyrOrTeam = "4" and a_RightPlyrOrTeam = "4" then
+		TrioCmd("page:set_property H0110 " & a_TBplyrVS)
+	elseif a_LeftPlyrOrTeam = "2" and a_RightPlyrOrTeam = "2" then
+		TrioCmd("page:set_property H0110 " & a_TBteamVS)
+	else
+		Fish = "SMELLY"
+	end if	
+End Function
+
+'--------TEXT JUSTIFICATION CONTROLS--------
+Function m_CenterName()
+	Select Case Name
+		Case "M1_Stat","MO_Stat","M1_PlyrTeamNotes","MO_PlyrTeamNotes","M1_PlyrTeamNotes2","MO_PlyrTeamNotes2"
+			a_vPlyrFName = TrioCmd("page:get_property H0101")
+			a_vPlyrLName = TrioCmd("page:get_property H0102")
+			a_vPlyrSub = TrioCmd("page:get_property H0103")
+			a_LenPlyrName = (Len(a_vPlyrFName) + Len(a_vPlyrLName) + CInt(1))
+			a_remainPlyrName = CInt(24) - CInt(a_LenPlyrName)
+			a_divPlyrName = CInt(a_remainPlyrName)
+			a_centerPlyrName = CInt(a_divPlyrName)
+			a_spaceString = String(a_centerPlyrName, " ")
+			TrioCmd("page:set_property " & "H0101 " & a_spaceString & " " & a_vPlyrFName)
+			
+			if Len(a_vPlyrSub) > 0 then
+				a_vTrimPlyrSub = Trim(a_vPlyrSub)
+				a_LenPlyrSub = Len(a_vTrimPlyrSub)
+				a_remainPlyrSub = CInt(44) - CInt(a_LenPlyrSub)
+				a_divPlyrSub = CInt(a_remainPlyrSub)
+				a_centerPlyrSub = CInt(a_divPlyrSub)
+				a_spaceStringSub = String(a_centerPlyrSub, " ")
+				TrioCmd("page:set_property " & "H0103 " & a_spaceStringSub & " " & a_vTrimPlyrSub)
+			end if
+		Case "TB_Main"
+			a_LLogoCheck = TrioCmd("page:get_property G0010")
+			a_RLogoCheck = TrioCmd("page:get_property I0010")
+			a_TBLayoutCheck = TrioCmd("page:get_property H0000")
+			a_TBTopLine = TrioCmd("page:get_property H0110")
+			a_TBBotLine = TrioCmd("page:get_property H0210")
+			
+			if a_LLogoCheck <> "0" then
+				if a_RLogoCheck = "0" then
+					Select Case a_TBLayoutCheck
+						Case "0"
+							a_TrimLineOne = Trim(a_TBTopLine)
+							a_LenLineOne = Len(a_TrimLineOne)
+							a_remainLineOne = CInt(49) - CInt(a_LenLineOne)
+							a_centerLineOne = CInt(a_remainLineOne)
+							a_spaceStrLineOne = String(a_centerLineOne, " ")
+							TrioCmd("page:set_property " & "H0110 " & a_spaceStrLineOne & " " & a_TrimLineOne)
+						Case "1"
+							a_TrimLineOne = Trim(a_TBTopLine)
+							a_LenLineOne = Len(a_TrimLineOne)
+							a_remainLineOne = CInt(64) - CInt(a_LenLineOne)
+							a_centerLineOne = CInt(a_remainLineOne)
+							a_spaceStrLineOne = String(a_centerLineOne, " ")
+							a_TrimLineTwo = Trim(a_TBBotLine)
+							a_LenLineTwo = Len(a_TrimLineTwo)
+							a_remainLineTwo = CInt(64) - CInt(a_LenLineTwo)
+							a_centerLineTwo = CInt(a_remainLineTwo)
+							a_spaceStrLineTwo = String(a_centerLineTwo, " ")
+							TrioCmd("page:set_property " & "H0110 " & a_spaceStrLineOne & " " & a_TrimLineOne)
+							TrioCmd("page:set_property " & "H0210 " & a_spaceStrLineTwo & " " & a_TrimLineTwo)
+						Case "2"
+							a_TrimLineOne = Trim(a_TBTopLine)
+							a_LenLineOne = Len(a_TrimLineOne)
+							a_remainLineOne = CInt(48) - CInt(a_LenLineOne)
+							a_centerLineOne = CInt(a_remainLineOne)
+							a_spaceStrLineOne = String(a_centerLineOne, " ")
+							a_replBlankLineTwo = Replace(a_TBBotLine, " ", "")
+							a_TrimLineTwo = Trim(a_replBlankLineTwo)
+							a_LenLineTwo = Len(a_TrimLineTwo)
+							a_remainLineTwo = CInt(74) - CInt(a_LenLineTwo)
+							a_centerLineTwo = CInt(a_remainLineTwo)
+							a_spaceStrLineTwo = String(a_centerLineTwo, " ")
+							TrioCmd("page:set_property " & "H0110 " & a_spaceStrLineOne & " " & a_TrimLineOne)
+							TrioCmd("page:set_property " & "H0210 " & " " & a_spaceStrLineTwo & " " & a_TrimLineTwo)
+						Case "3"
+							a_TrimLineOne = Trim(a_TBTopLine)
+							a_LenLineOne = Len(a_TrimLineOne)
+							a_remainLineOne = CInt(74) - CInt(a_LenLineOne)
+							a_centerLineOne = CInt(a_remainLineOne)
+							a_spaceStrLineOne = String(a_centerLineOne, " ")
+							a_replBlankLineTwo = Replace(a_TBBotLine, " ", "")
+							a_TrimLineTwo = Trim(a_replBlankLineTwo)
+							a_LenLineTwo = Len(a_TrimLineTwo)
+							a_remainLineTwo = CInt(49) - CInt(a_LenLineTwo)
+							a_centerLineTwo = CInt(a_remainLineTwo)
+							a_spaceStrLineTwo = String(a_centerLineTwo, " ")
+							TrioCmd("page:set_property " & "H0110 " & a_spaceStrLineOne & " " & a_TrimLineOne)
+							TrioCmd("page:set_property " & "H0210 " & " " & a_spaceStrLineTwo & " " & a_TrimLineTwo)
+						Case Else
+							Nachos = "GOOD"
+					End Select
+				else
+					Tacos = "GOOD"
+				end if
+			else
+				Pizza = "GOOD"
+			end if
+		Case Else
+			Steak = "GOOD"
+	End Select
+	'TrioCmd("trio:sleep 5")
+	'TrioCmd("gui:error_message You Have Run The ----------->   Center Name Function")
+	'TrioCmd("gui:set_statusbar_color 0 0 200")	
+End Function
+
+'--------CHECK IF FINISHED SCENE IS MULTI-LOGO OR ALL SAME TEAM--------
+Function m_SameTeam(a_Rows,a_LogoTabs,a_PlyrLogoTabs,a_LeagueLogo,a_runSameTeam)
+	if a_runSameTeam = "NO" then
+		Exit Function
+	else
+		a_sameCheckRows = CInt(a_Rows) - 1
+		z = 1
+		for x = 1 to a_sameCheckRows
+			z = z + 1
+			a_checkLogoOne = TrioCmd("page:get_property " & a_LogoTabs(x))
+			a_checkLogoTwo = TrioCmd("page:get_property " & a_LogoTabs(z))
+			
+			if (a_checkLogoOne <> a_checkLogoTwo) then
+				a_sameTeamCheck = "NO"
+				Exit for
+			else
+				a_sameTeamCheck = "YES"
+			end if
+		next
+		if a_sameTeamCheck = "YES" then
+			TrioCmd("page:set_property A0004 " & "1")
+			if a_LeagueLogo = "YES" then
+				TrioCmd("page:set_property B0000 " & a_checkLogoOne)
+			else
+				TrioCmd("page:set_property A1000 " & a_checkLogoOne)
+			end if
+			
+			for y = 1 to a_Rows
+				TrioCmd("page:set_property " & a_PlyrLogoTabs(y) & " " & "1")
+			Next
+			TrioCmd("trio:sleep 5")
+			TrioCmd("gui:error_message You Have Run The ----------->   Same Team Function since all players are on " & UCase(a_checkLogoOne))
+			TrioCmd("gui:set_statusbar_color 115 0 200")
+		elseif a_sameTeamCheck = "NO" then
+			if InStr(a_tfNames, "A1000") > 0 then
+				a_titleCheck = TrioCmd("page:get_property A1000")
+			elseif InStr(a_tfNames, "A0100") > 0 then
+				a_titleCheck = TrioCmd("page:get_property A0100")
+			else
+				Watermelon = "SEEDLESS"
+			end if
+			
+			if (a_titleCheck <> a_checkLogoOne) then
+				Grapes = "PURPLE"
+			else
+				TrioCmd("page:set_property A0004 " & "0")
+			end if
+		end if
+	end if
+End Function
+
+'--------GET GLOBAL LEAGUE--------
+Function m_globalLeague(a_tfNames,a_globalLeagueSet)
+	if InStr(a_tfNames, "A0100") > 0 then
+		a_globalLeagueSet = TrioCmd("page:get_property " & "A0100")
+	else
+		a_globalLeagueSet = "NBA"
+		'MsgBox "Global League tabfield is not the standard A0100" & vbCrlf & vbCrlf & "You may need to re-import this scene"
+	end if
+End Function
+
+'--------LOG FILES & ERRORS--------
+Function m_JordanScriptLog(v_Date,a_ScriptLogNumber,sVersion)
+	Select Case a_ScriptLogNumber
+		Case "1"
+			Dim oFSO, tf, t_AddScene, t_SaveFilename, t_SaveFilepath, t_SaveFolder
+
+			t_AddScene = Name
+			t_SaveFolder = "C:\Z_F5-ScriptLog\"
+			t_SaveFilename = "F5-MissingScenes_" & v_Date & ".txt"
+			t_SaveFilepath = t_SaveFolder & t_SaveFilename
+
+			'*** CREATE ROOT FOLDER IF NOT EXISTS ***
+			Set WshShell = CreateObject("WScript.Shell")
+			Set oFSO = CreateObject("Scripting.FileSystemObject")
+
+			If Not oFSO.FolderExists(t_SaveFolder) Then
+				oFSO.CreateFolder(t_SaveFolder)
+			End If
+
+			Set tf = oFSO.OpenTextFile(t_SaveFilepath,8, TRUE)
+			tf.WriteLine(t_AddScene)
+			tf.Close
+
+			TrioCmd("trio:sleep 10")
+			TrioCmd("gui:error_message MISSING SCENE LOGGER-->  " & t_AddScene & " Added to log file -->  " & t_SaveFilepath & "   |   F5 PLAYER/TEAM PLUGIN " & sVersion)
+			TrioCmd("gui:set_statusbar_color 130 0 0")
+		Case Else
+			Pizza = "GOOD"
+	End Select
+End Function

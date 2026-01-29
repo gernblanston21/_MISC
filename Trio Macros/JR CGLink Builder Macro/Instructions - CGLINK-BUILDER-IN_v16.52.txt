@@ -1,0 +1,37 @@
+CGLINK-BUILDER-IN_v16.2 Instructions
+
+- Add CGLINK-BUILDER-IN_v16.2.txt to your keyboard file as a script and assign it to a key
+
+- This script combines the "Build From Loaded CG_Ticker Page" button & the "IN" button on the BallyBar tab of the VTW.
+
+- It also lets you take any page where the scene used is L3_TeamPlyrStat, L3_PlyrNote, L3_Plyr0Fer, L3_0forAvg, L3_TeamComp or NU_WinProb and flip that page into a CG_Ticker page
+	- Call up the page you want to use like a "L3_TeamPlyrStat" you have saved for a player.
+	- Press the key you assigned the CGLINK-BUILDER-IN_v16 script to once and this will flip it to a corresponding CG_Ticker Scene.
+	- Press the CGLINK-BUILDER-IN_v16 key again to insert it on the Bally Bar.
+	- If the Scene you have on canvas is already a CG_Ticker page you only need to press the CGLINK-BUILDER-IN_v16 key once.
+	
+- The L3_TeamComp will flip single stats from column 1. I will be adding more scenes that can flip to a CG_Ticker Scene including L3_TeamComp with stats from column 1 & 2
+
+- The NU_WinProb nub can also be flipped to a CG_Ticker Scene.
+	- Make sure you have selected the League and game you want on the Win Prob% tab of the VTW.
+	- You can save that NU_WinProb Nub to a page number for easier recall.
+	- With the NU_WinProb Nub on your canvas, press the CGLINK-BUILDER-IN_v16 key once to flip it to a CG_Ticker Scene.
+	- The script will automatically refresh the Win Prob% data
+	- Press the CGLINK-BUILDER-IN_v16 key again to insert it on the Bally Bar.
+
+- The current CG_Ticker Scenes that can be inserted to the Bally Bar from the Viz are:
+	- CG_Ticker_PlayerStats
+	- CG_Ticker_TeamStats
+	- CG_Ticker_TeamComp
+	- CG_Ticker_2TeamNote
+	- CG_Ticker_PlyrComp2Stat
+	
+- The current Scenes that can be flipped into a CG_Ticker Scene are:
+	- L3_TeamPlyrStat
+	- L3_PlyrNote
+	- L3_Plyr0Fer
+	- L3_0forAvg
+	- L3_TeamComp
+	- NU_WinProb
+	
+- More Scenes will be added soon. If there is a Scene that you think would work being flipped to a CG_Ticker Scene email me your suggestion at ReisGraphics@gmail.com

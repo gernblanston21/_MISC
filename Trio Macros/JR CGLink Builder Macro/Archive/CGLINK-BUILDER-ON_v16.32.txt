@@ -1,0 +1,1444 @@
+'JORDAN: CGLink Build IN v16.32 (04.02.23) -- KEY: {}
+'COMBINES THE BUILD FROM PAGE AND INSERT SCRIPTS FOR BALLY BAR POPS
+'WORKS ON CG_Ticker_PlayerStats, CG_Ticker_TeamStats, CG_Ticker_TeamComp, CG_Ticker_2TeamNote & CG_Ticker_PlyrComp2Stat
+'ALSO WILL BUILD AND INSERT BALLY BAR POPS FROM L3_TeamPlyrStat, L3_PlyrNote, L3_Plyr0Fer, L3_0forAvg, L3_TeamComp, NU_WinProb
+'L3_TeamPlyrStat WILL USE STAT 1-4, CAT 1-4 & QUALIFIER
+'L3_PlyrNote WILL USE NOTE LINE 1
+
+
+v_JerseyEnable = "NO"
+v_PositionEnable = "NO"
+v_Tigers = "NO"
+a_vtwCheck = TrioCmd("vtwtemplate:get_template")
+Call m_vtwVersion(v_vtwNumber,v_WPrefresh)
+TrioCmd("vtwtemplate:run_vtw_script clear_fields")
+TrioCmd("trio:sleep 10")
+
+Name = TrioCmd("page:getpagetemplate")
+v_pgNumber = TrioCmd("page:getpagename")
+v_ShowName = TrioCmd("show:get_show_name")
+v_LeagueChk = TrioCmd("page:get_property A0100")
+
+if v_LeagueChk = "" then
+	v_League = inputbox("Tabfield (A0100) League is empty" & vbCrlf & vbCrlf & "Enter League:" & vbCrlf & "Example:   NHL","CGLINK BUILD - LEAGUE","")
+	TrioCmd("page:set_property A0100 " & UCase(v_League))
+else
+	v_League = v_LeagueChk
+end if	
+
+Select Case Name
+	Case "L3_TeamPlyrStat"
+		v_CGtype = "L3"
+	Case "L3_Plyr0Fer"
+		v_CGtype = "L3_0for"
+	Case "L3_Plyr0Fer_Avg"
+		v_CGtype = "L3_0forAvg"
+	Case "L3_PlyrNote"
+		if (v_League = "MLB") and v_Tigers = "YES" then
+			if (v_pgNumber > 499 and v_pgNumber < 700) then
+				v_CGtype = "L3MLB"
+			else
+				v_CGtype = "L3N"
+			end if
+		else
+			v_CGtype = "L3N"
+		end if
+	Case "L3_TeamComp"
+		v_CGtype = "L3COMP"
+	Case "NU_WinProb"
+		v_CGtype = "L3COMP_WP"
+	Case "CG_Ticker_TeamStats","CG_Ticker_PlayerStats","CG_Ticker_TeamComp","CG_Ticker_2TeamNote","CG_Ticker_PlyrComp2Stat","CG_Ticker_PlyrComp3Stat","CG_Ticker_Matchup","CG_Ticker_StartingFive"
+		v_CGtype = "CG"
+	Case else
+		v_CGtype = "XX"
+End Select		
+
+if v_CGtype = "L3" then
+	v_PlyrTeam = TrioCmd("page:get_property B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_PlyrStatCat = TrioCmd("page:get_property H0005")
+	v_PlyrNameF = TrioCmd("page:get_property H0010")
+	v_PlyrNameL = TrioCmd("page:get_property H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = TrioCmd("page:get_property H0031")
+	v_PlyrPos = TrioCmd("page:get_property H0041")
+	v_Stat1 = TrioCmd("page:get_property H0101")
+	v_Stat2 = TrioCmd("page:get_property H0201")
+	v_Stat3 = TrioCmd("page:get_property H0301")
+	v_Stat4 = TrioCmd("page:get_property H0401")
+	v_Cat1 = TrioCmd("page:get_property H0100")
+	v_Cat2 = TrioCmd("page:get_property H0200")
+	v_Cat3 = TrioCmd("page:get_property H0300")
+	v_Cat4 = TrioCmd("page:get_property H0400")
+	v_Qual = TrioCmd("page:get_property B0200")
+	v_PlyrNameLCust = TrioCmd("tabfield:get_custom_property H0011")
+	
+	if left(v_PlyrNameLCust, 5) = "team." then
+		v_PlyrName = v_PlyrNameL
+	else
+		v_PlyrName = v_PlyrName
+	end if
+	
+	TrioCmd("trio:sleep 10")
+	TrioCmd("page:read_template CG_Ticker_PlayerStats")
+	TrioCmd("trio:sleep 10")
+	
+	TrioCmd("page:set_property A0100 " & v_League)
+	TrioCmd("page:set_property B0000 " & v_PlyrTeam)
+	TrioCmd("page:set_property H0005 " & v_PlyrStatCat)
+	TrioCmd("page:set_property H0010 " & v_PlyrName)
+	TrioCmd("page:set_property H0101 " & v_Stat1)
+	TrioCmd("page:set_property H0201 " & v_Stat2)
+	TrioCmd("page:set_property H0301 " & v_Stat3)
+	TrioCmd("page:set_property H0401 " & v_Stat4)
+	TrioCmd("page:set_property H0100 " & v_Cat1)
+	TrioCmd("page:set_property H0200 " & v_Cat2)
+	TrioCmd("page:set_property H0300 " & v_Cat3)
+	TrioCmd("page:set_property H0400 " & v_Cat4)
+	TrioCmd("page:set_property B0300 " & v_Qual)
+	
+	if v_JerseyEnable = "YES" then
+		TrioCmd("page:set_property H0011 " & v_PlyrJersey)
+	else
+		TrioCmd("page:set_property H0011 " & "")
+	end if
+	
+	if v_PositionEnable = "YES" then
+		TrioCmd("page:set_property H0012 " & v_PlyrPos)
+	else
+		TrioCmd("page:set_property H0012 " & "")
+	end if
+
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3MLB" then	
+	v_PlyrTeam = TrioCmd("page:get_property B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_PlyrStatCat = TrioCmd("page:get_property H0005")
+	v_PlyrNameF = TrioCmd("page:get_property H0010")
+	v_PlyrNameL = TrioCmd("page:get_property H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = TrioCmd("page:get_property H0031")
+	v_PlyrPos = TrioCmd("page:get_property H0041")
+	v_Cat1 = TrioCmd("page:get_property H0100")
+	v_Cat2 = TrioCmd("page:get_property H0200")
+	v_Foot = TrioCmd("page:get_property Z0900")
+
+	v_Qual = TrioCmd("page:get_property B0200")
+	v_PlyrNameLCust = TrioCmd("tabfield:get_custom_property H0011")
+	
+	v_Cat1 = replace(v_Cat1, "*AY ", "")
+	v_Cat1 = replace(v_Cat1, "*AY", "")
+	v_Cat1 = replace(v_Cat1, "{", "")
+	v_Cat1 = replace(v_Cat1, "}", "")
+	v_Cat1 = replace(v_Cat1, "[", "")
+	v_Cat1 = replace(v_Cat1, "]", "")
+	
+	v_Cat2 = replace(v_Cat2, "*AY ", "")
+	v_Cat2 = replace(v_Cat2, "*AY", "")
+	v_Cat2 = replace(v_Cat2, "{", "")
+	v_Cat2 = replace(v_Cat2, "}", "")
+	v_Cat2 = replace(v_Cat2, "[", "")
+	v_Cat2 = replace(v_Cat2, "]", "")
+	
+	v_Foot1 = replace(v_Foot, "{", "")
+	v_Foot1 = replace(v_Foot1, "}", "")
+	v_Foot1 = replace(v_Foot1, "[", "")
+	v_Foot1 = replace(v_Foot1, "]", "")
+	v_Foot1 = replace(v_Foot1, ":  ", ",")
+	v_Foot1 = replace(v_Foot1, ":", ",")
+	v_Foot1 = replace(v_Foot1, ", ", ",")
+	v_Foot1 = replace(v_Foot1, "         ", ",")
+	s_Foot = split(v_Foot1, ",")
+
+	if UBound(s_Foot) = 4 then
+		s_Foot1 = s_Foot(0)
+		s_Foot2 = split(s_Foot(1), " ")
+		s_Foot3 = split(s_Foot(2), " ")
+		s_Foot4 = split(s_Foot(3), " ")
+		s_Foot5 = split(s_Foot(4), " ")
+	elseif UBound(s_Foot) = 3 then
+		s_Foot1 = s_Foot(0)
+		s_Foot2 = split(s_Foot(1), " ")
+		s_Foot3 = split(s_Foot(2), " ")
+		s_Foot4 = split(s_Foot(3), " ")
+	elseif UBound(s_Foot) = 2 then
+		s_Foot1 = s_Foot(0)
+		s_Foot2 = split(s_Foot(1), " ")
+		s_Foot3 = split(s_Foot(2), " ")
+	elseif UBound(s_Foot) = 1 then
+		s_Foot1 = s_Foot(0)
+		s_Foot2 = split(s_Foot(1), " ")
+	else
+		s_Foot1 = v_Foot
+	end if
+	
+	if s_Foot1 = "SEASON" then
+		s_Foot1 = "THIS SEASON"
+	else
+		s_Foot1 = s_Foot1
+	end if
+	
+	if left(v_PlyrNameLCust, 5) = "team." then
+		v_PlyrName = v_PlyrNameL
+	else
+		v_PlyrName = v_PlyrName
+	end if
+	
+	TrioCmd("trio:sleep 10")
+	TrioCmd("page:read_template CG_Ticker_PlayerStats")
+	TrioCmd("trio:sleep 10")
+	
+	if (v_pgNumber > 499 and v_pgNumber < 510) or (v_pgNumber > 599 and v_pgNumber < 610) then
+		TrioCmd("page:set_property A0100 " & v_League)
+		TrioCmd("page:set_property B0000 " & v_PlyrTeam)
+		TrioCmd("page:set_property H0005 " & "1")
+		TrioCmd("page:set_property H0010 " & v_PlyrPos & "  [" & v_PlyrName & "]")
+		TrioCmd("page:set_property H0101 " & s_Foot2(0) & " " & s_Foot2(1))
+		TrioCmd("page:set_property H0201 " & s_Foot3(0))
+		TrioCmd("page:set_property H0301 " & s_Foot4(0))
+		TrioCmd("page:set_property H0401 " & "")
+		TrioCmd("page:set_property H0100 " & "")
+		TrioCmd("page:set_property H0200 " & s_Foot3(1))
+		TrioCmd("page:set_property H0300 " & s_Foot4(1))
+		TrioCmd("page:set_property H0400 " & "")
+		TrioCmd("page:set_property B0300 " & s_Foot1)
+	elseif (v_pgNumber > 509 and v_pgNumber < 520) or (v_pgNumber > 549 and v_pgNumber < 560) or (v_pgNumber > 589 and v_pgNumber < 600) or (v_pgNumber > 609 and v_pgNumber < 620) or (v_pgNumber > 649 and v_pgNumber < 660) or (v_pgNumber > 689 and v_pgNumber < 700) then
+		TrioCmd("page:set_property A0100 " & v_League)
+		TrioCmd("page:set_property B0000 " & v_PlyrTeam)
+		TrioCmd("page:set_property H0005 " & "1")
+		TrioCmd("page:set_property H0010 " & v_PlyrPos & "  [" & v_PlyrName & "]")
+		TrioCmd("page:set_property H0101 " & s_Foot2(0))
+		TrioCmd("page:set_property H0201 " & s_Foot3(0))
+		TrioCmd("page:set_property H0301 " & s_Foot4(0))
+		TrioCmd("page:set_property H0401 " & "")
+		TrioCmd("page:set_property H0100 " & s_Foot2(1))
+		TrioCmd("page:set_property H0200 " & s_Foot3(1))
+		TrioCmd("page:set_property H0300 " & s_Foot4(1))
+		TrioCmd("page:set_property H0400 " & "")
+		TrioCmd("page:set_property B0300 " & s_Foot1)
+	elseif (v_pgNumber > 539 and v_pgNumber < 550) or (v_pgNumber > 639 and v_pgNumber < 650) then
+		TrioCmd("page:set_property A0100 " & v_League)
+		TrioCmd("page:set_property B0000 " & v_PlyrTeam)
+		TrioCmd("page:set_property H0005 " & "0")
+		TrioCmd("page:set_property H0010 " & v_PlyrPos & "  [" & v_PlyrName & "]")
+		TrioCmd("page:set_property H0101 " & s_Foot2(0) & " " & s_Foot2(1) & " " & s_Foot2(2))
+		TrioCmd("page:set_property H0201 " & s_Foot4(0) & " " & s_Foot4(1))
+		TrioCmd("page:set_property H0301 " & "")
+		TrioCmd("page:set_property H0401 " & "")
+		TrioCmd("page:set_property H0100 " & s_Foot1 & ":")
+		TrioCmd("page:set_property H0200 " & s_Foot3(0) & ":")
+		TrioCmd("page:set_property H0300 " & "")
+		TrioCmd("page:set_property H0400 " & "")
+		TrioCmd("page:set_property B0300 " & "")
+	elseif (v_pgNumber > 559 and v_pgNumber < 570) or (v_pgNumber > 659 and v_pgNumber < 670) then
+		TrioCmd("page:set_property A0100 " & v_League)
+		TrioCmd("page:set_property B0000 " & v_PlyrTeam)
+		TrioCmd("page:set_property H0005 " & "1")
+		TrioCmd("page:set_property H0010 " & v_PlyrPos & "  [" & v_PlyrName & "]")
+		TrioCmd("page:set_property H0101 " & s_Foot2(0) & " " & s_Foot2(1) & " " & s_Foot2(2) & " " & s_Foot2(3))
+		TrioCmd("page:set_property H0201 " & "")
+		TrioCmd("page:set_property H0301 " & "")
+		TrioCmd("page:set_property H0401 " & "")
+		TrioCmd("page:set_property H0100 " & "")
+		TrioCmd("page:set_property H0200 " & "")
+		TrioCmd("page:set_property H0300 " & "")
+		TrioCmd("page:set_property H0400 " & "")
+		TrioCmd("page:set_property B0300 " & s_Foot1)
+	elseif (v_pgNumber > 569 and v_pgNumber < 580) or (v_pgNumber > 669 and v_pgNumber < 680) then
+		TrioCmd("page:set_property A0100 " & v_League)
+		TrioCmd("page:set_property B0000 " & v_PlyrTeam)
+		TrioCmd("page:set_property H0005 " & "1")
+		TrioCmd("page:set_property H0010 " & v_PlyrPos & "  [" & v_PlyrName & "]")
+		TrioCmd("page:set_property H0101 " & s_Foot2(0))
+		TrioCmd("page:set_property H0201 " & s_Foot3(0))
+		TrioCmd("page:set_property H0301 " & s_Foot4(0))
+		TrioCmd("page:set_property H0401 " & s_Foot5(0))
+		TrioCmd("page:set_property H0100 " & s_Foot2(1))
+		TrioCmd("page:set_property H0200 " & s_Foot3(1))
+		TrioCmd("page:set_property H0300 " & s_Foot4(1))
+		TrioCmd("page:set_property H0400 " & s_Foot5(1))
+		TrioCmd("page:set_property B0300 " & s_Foot1)
+	elseif (v_pgNumber > 579 and v_pgNumber < 590) or (v_pgNumber > 679 and v_pgNumber < 690) then
+		v_Cat1Split = split(v_Cat1, "  ")
+		TrioCmd("page:set_property A0100 " & v_League)
+		TrioCmd("page:set_property B0000 " & v_PlyrTeam)
+		TrioCmd("page:set_property H0005 " & "0")
+		TrioCmd("page:set_property H0010 " & v_PlyrPos & "  [" & v_PlyrName & "]")
+		TrioCmd("page:set_property H0101 " & v_Cat1Split(1))
+		TrioCmd("page:set_property H0201 " & "")
+		TrioCmd("page:set_property H0301 " & "")
+		TrioCmd("page:set_property H0401 " & "")
+		TrioCmd("page:set_property H0100 " & "FIRST PA:")
+		TrioCmd("page:set_property H0200 " & "NO OFFICIAL AB:")
+		TrioCmd("page:set_property H0300 " & "")
+		TrioCmd("page:set_property H0400 " & "")
+		TrioCmd("page:set_property B0300 " & v_Qual)
+	else
+		TrioCmd("page:set_property A0100 " & v_League)
+		TrioCmd("page:set_property B0000 " & v_PlyrTeam)
+		TrioCmd("page:set_property H0005 " & "1")
+		TrioCmd("page:set_property H0010 " & v_PlyrPos & "  [" & v_PlyrName & "]")
+		TrioCmd("page:set_property H0101 " & v_Cat1)
+		TrioCmd("page:set_property H0201 " & "")
+		TrioCmd("page:set_property H0301 " & "")
+		TrioCmd("page:set_property H0401 " & "")
+		TrioCmd("page:set_property H0100 " & v_Cat2)
+		TrioCmd("page:set_property H0200 " & "")
+		TrioCmd("page:set_property H0300 " & "")
+		TrioCmd("page:set_property H0400 " & "")
+		TrioCmd("page:set_property B0300 " & v_Qual)
+	end if
+	
+	if v_JerseyEnable = "YES" then
+		TrioCmd("page:set_property H0011 " & v_PlyrJersey)
+	else
+		TrioCmd("page:set_property H0011 " & "")
+	end if
+	
+	if v_PositionEnable = "YES" then
+		TrioCmd("page:set_property H0012 " & v_PlyrPos)
+	else
+		TrioCmd("page:set_property H0012 " & "")
+	end if
+
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3_0for" then
+	v_PlyrTeam = TrioCmd("page:get_property B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_PlyrStatCat = "1"
+	v_PlyrNameF = TrioCmd("page:get_property H0010")
+	v_PlyrNameL = TrioCmd("page:get_property H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = TrioCmd("page:get_property H0031")
+	v_PlyrPos = TrioCmd("page:get_property H0041")
+	v_Stat1 = TrioCmd("page:get_property H0101")
+	v_Stat2 = TrioCmd("page:get_property H0201")
+	v_Cat1 = TrioCmd("page:get_property H0054")
+	v_Qual = TrioCmd("page:get_property G0050")
+	v_PlyrNameLCust = TrioCmd("tabfield:get_custom_property H0011")
+	
+	if left(v_PlyrNameLCust, 5) = "team." then
+		v_PlyrName = v_PlyrNameL
+	else
+		v_PlyrName = v_PlyrName
+	end if
+	
+	TrioCmd("trio:sleep 10")
+	TrioCmd("page:read_template CG_Ticker_PlayerStats")
+	TrioCmd("trio:sleep 10")
+	
+	TrioCmd("page:set_property A0100 " & v_League)
+	TrioCmd("page:set_property B0000 " & v_PlyrTeam)
+	TrioCmd("page:set_property H0005 " & v_PlyrStatCat)
+	TrioCmd("page:set_property H0010 " & v_PlyrName)
+	TrioCmd("page:set_property H0101 " & v_Stat1 & " for " & v_Stat2)
+	TrioCmd("page:set_property H0201 " & "")
+	TrioCmd("page:set_property H0301 " & "")
+	TrioCmd("page:set_property H0401 " & "")
+	TrioCmd("page:set_property H0100 " & v_Cat1)
+	TrioCmd("page:set_property H0200 " & "")
+	TrioCmd("page:set_property H0300 " & "")
+	TrioCmd("page:set_property H0400 " & "")
+	TrioCmd("page:set_property B0300 " & v_Qual)
+	
+	if v_JerseyEnable = "YES" then
+		TrioCmd("page:set_property H0011 " & v_PlyrJersey)
+	else
+		TrioCmd("page:set_property H0011 " & "")
+	end if
+	
+	if v_PositionEnable = "YES" then
+		TrioCmd("page:set_property H0012 " & v_PlyrPos)
+	else
+		TrioCmd("page:set_property H0012 " & "")
+	end if
+
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3_0forAvg" then
+	v_PlyrTeam = TrioCmd("page:get_property B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_PlyrStatCat = "0"
+	v_PlyrNameF = TrioCmd("page:get_property H0010")
+	v_PlyrNameL = TrioCmd("page:get_property H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = TrioCmd("page:get_property H0031")
+	v_PlyrPos = TrioCmd("page:get_property H0041")
+	v_Stat1 = TrioCmd("page:get_property H0101")
+	v_Stat2 = TrioCmd("page:get_property H0201")
+	v_Stat3 = TrioCmd("page:get_property H0301")
+	v_Stat4 = TrioCmd("page:get_property H0401")
+	v_Stat5 = TrioCmd("page:get_property H0601")
+	v_Cat1 = TrioCmd("page:get_property H0501")
+	v_Cat2 = TrioCmd("page:get_property H0701")
+	v_Qual = TrioCmd("page:get_property G0050")
+	v_PlyrNameLCust = TrioCmd("tabfield:get_custom_property H0011")
+	
+	if left(v_PlyrNameLCust, 5) = "team." then
+		v_PlyrName = v_PlyrNameL
+	else
+		v_PlyrName = v_PlyrName
+	end if
+	
+	TrioCmd("trio:sleep 10")
+	TrioCmd("page:read_template CG_Ticker_PlayerStats")
+	TrioCmd("trio:sleep 10")
+	
+	TrioCmd("page:set_property A0100 " & v_League)
+	TrioCmd("page:set_property B0000 " & v_PlyrTeam)
+	TrioCmd("page:set_property H0005 " & v_PlyrStatCat)
+	TrioCmd("page:set_property H0010 " & v_PlyrName)
+	TrioCmd("page:set_property H0101 " & v_Stat1)
+	TrioCmd("page:set_property H0201 " & v_Stat2 & " for " & v_Stat3)
+	TrioCmd("page:set_property H0301 " & v_Stat4)
+	TrioCmd("page:set_property H0401 " & v_Stat5)
+	TrioCmd("page:set_property H0100 " & "")
+	TrioCmd("page:set_property H0200 " & "")
+	TrioCmd("page:set_property H0300 " & v_Cat1)
+	TrioCmd("page:set_property H0400 " & v_Cat2)
+	TrioCmd("page:set_property B0300 " & v_Qual)
+	
+	if v_JerseyEnable = "YES" then
+		TrioCmd("page:set_property H0011 " & v_PlyrJersey)
+	else
+		TrioCmd("page:set_property H0011 " & "")
+	end if
+	
+	if v_PositionEnable = "YES" then
+		TrioCmd("page:set_property H0012 " & v_PlyrPos)
+	else
+		TrioCmd("page:set_property H0012 " & "")
+	end if
+
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3COMP" then
+	v_PlyrTeam1 = TrioCmd("page:get_property B0000")
+	v_PlyrTeam1 = Trim(v_PlyrTeam1)
+	v_PlyrTeam2 = TrioCmd("page:get_property B0001")
+	v_PlyrTeam2 = Trim(v_PlyrTeam2)
+	v_PlyrName1 = TrioCmd("page:get_property H0100")
+	v_PlyrName2 = TrioCmd("page:get_property H0200")
+	v_Stat1 = TrioCmd("page:get_property H0110")
+	v_Stat2 = TrioCmd("page:get_property H0210")
+	v_Qual = TrioCmd("page:get_property H0010")
+	v_Qual2 = TrioCmd("page:get_property H0011")
+	
+	if (v_Qual = "") And (v_Qual2 = "") then
+		v_Qual = ""
+	elseif (v_Qual = "TONIGHT") And (v_Qual2 <> "") then
+		v_Qual = v_Qual2
+	elseif (v_Qual = "TODAY") And (v_Qual2 <> "") then
+		v_Qual = v_Qual2
+	elseif (v_Qual <> "") And (v_Qual2 = "") then
+		v_Qual = v_Qual
+	elseif (v_Qual = "") And (v_Qual2 <> "") then
+		v_Qual = v_Qual2
+	elseif (v_Qual <> "") And (v_Qual2 <> "") then
+		v_Qual = v_Qual & " - " & v_Qual2
+	else
+		v_Qual = ""
+	end if
+	
+	TrioCmd("trio:sleep 10")
+	TrioCmd("page:read_template CG_Ticker_TeamComp")
+	TrioCmd("trio:sleep 10")
+	
+	TrioCmd("page:set_property A0100 " & v_League)
+	TrioCmd("page:set_property B0000 " & v_PlyrTeam1)
+	TrioCmd("page:set_property B0001 " & v_PlyrTeam2)
+	TrioCmd("page:set_property H0010 " & v_PlyrName1)
+	TrioCmd("page:set_property H0020 " & v_PlyrName2)
+	TrioCmd("page:set_property H0015 " & v_Stat1)
+	TrioCmd("page:set_property H0025 " & v_Stat2)
+	TrioCmd("page:set_property B0300 " & v_Qual)
+	
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3COMP_WP" then
+	if v_WPrefresh = "YES" then
+		TrioCmd("vtwtemplate:run_vtw_script ClickWinProb_NubbRadialButton")
+	else
+		data_Note = "VTW Version does not have FS Win Prob"
+	end if
+	TrioCmd("vtwtemplate:run_vtw_script get_wp_data")
+	TrioCmd("trio:sleep 50")
+	
+	v_League = TrioCmd("page:get_property A0100")
+	v_PlyrTeam1 = TrioCmd("page:get_property B0000")
+	v_PlyrTeam1 = Trim(v_PlyrTeam1)
+	Call m_Team1(nv_Nickname1)
+	v_PlyrName1 = nv_Nickname1
+	v_PlyrTeam2 = TrioCmd("page:get_property B0001")
+	v_PlyrTeam2 = Trim(v_PlyrTeam2)
+	Call m_Team2(nv_Nickname2)
+	v_PlyrName2 = nv_Nickname2
+	v_Stat1 = TrioCmd("page:get_property H0054")
+	v_Stat1 = replace(v_Stat1, "%", "")
+	v_Stat1 = CDbl(v_Stat1)
+	v_Stat1 = Round(v_Stat1, 1)
+	if InStr(v_Stat1, ".") < 1 then
+		v_Stat1 = v_Stat1 & ".0"
+	end if
+	v_Stat1 = v_Stat1 & "%"
+	v_Stat2 = TrioCmd("page:get_property H0064")
+	v_Stat2 = replace(v_Stat2, "%", "")
+	v_Stat2 = CDbl(v_Stat2)
+	v_Stat2 = Round(v_Stat2, 1)
+	if InStr(v_Stat2, ".") < 1 then
+		v_Stat2 = v_Stat2 & ".0"
+	end if
+	v_Stat2 = v_Stat2 & "%"
+	v_Qual = TrioCmd("page:get_property B0200")
+	
+	
+	TrioCmd("trio:sleep 10")
+	TrioCmd("page:read_template CG_Ticker_TeamComp")
+	TrioCmd("trio:sleep 10")
+	
+	TrioCmd("page:set_property A0100 " & v_League)
+	TrioCmd("page:set_property B0000 " & v_PlyrTeam1)
+	TrioCmd("page:set_property B0001 " & v_PlyrTeam2)
+	TrioCmd("page:set_property H0010 " & v_PlyrName1)
+	TrioCmd("page:set_property H0020 " & v_PlyrName2)
+	TrioCmd("page:set_property H0015 " & v_Stat1)
+	TrioCmd("page:set_property H0025 " & v_Stat2)
+	TrioCmd("page:set_property B0300 " & v_Qual)
+	
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3N" then
+	v_PlyrTeam = TrioCmd("page:get_property B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_PlyrStatCat = TrioCmd("page:get_property H0005")
+	v_PlyrNameF = TrioCmd("page:get_property H0010")
+	v_PlyrNameL = TrioCmd("page:get_property H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = TrioCmd("page:get_property H0031")
+	v_PlyrPos = TrioCmd("page:get_property H0041")
+	v_Cat1 = TrioCmd("page:get_property H0100")
+
+	v_Qual = TrioCmd("page:get_property B0200")
+	v_PlyrNameLCust = TrioCmd("tabfield:get_custom_property H0011")
+	
+	v_Cat1 = replace(v_Cat1, "*AY ", "")
+	v_Cat1 = replace(v_Cat1, "*AY", "")
+	v_Cat1 = replace(v_Cat1, "{", "")
+	v_Cat1 = replace(v_Cat1, "}", "")
+	
+	if left(v_PlyrNameLCust, 5) = "team." then
+		v_PlyrName = v_PlyrNameL
+	else
+		v_PlyrName = v_PlyrName
+	end if
+	
+	TrioCmd("trio:sleep 10")
+	TrioCmd("page:read_template CG_Ticker_PlayerStats")
+	TrioCmd("trio:sleep 10")
+	
+	TrioCmd("page:set_property A0100 " & v_League)
+	TrioCmd("page:set_property B0000 " & v_PlyrTeam)
+	TrioCmd("page:set_property H0005 " & v_PlyrStatCat)
+	TrioCmd("page:set_property H0010 " & v_PlyrName)
+	TrioCmd("page:set_property H0101 " & v_Cat1)
+	TrioCmd("page:set_property H0201 " & "")
+	TrioCmd("page:set_property H0301 " & "")
+	TrioCmd("page:set_property H0401 " & "")
+	TrioCmd("page:set_property H0100 " & "")
+	TrioCmd("page:set_property H0200 " & "")
+	TrioCmd("page:set_property H0300 " & "")
+	TrioCmd("page:set_property H0400 " & "")
+	TrioCmd("page:set_property B0300 " & v_Qual)
+	
+	if v_JerseyEnable = "YES" then
+		TrioCmd("page:set_property H0011 " & v_PlyrJersey)
+	else
+		TrioCmd("page:set_property H0011 " & "")
+	end if
+	
+	if v_PositionEnable = "YES" then
+		TrioCmd("page:set_property H0012 " & v_PlyrPos)
+	else
+		TrioCmd("page:set_property H0012 " & "")
+	end if
+	
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "CG" then
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+	TrioCmd("trio:sleep 10")
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_inMacro")
+else
+	TrioCmd("trio:sleep 5")
+	TrioCmd("gui:error_message INVALID CGLink Page -------> ( " & Name & " ) Email Jordan Reis at ReisGraphics@gmail.com to add scene")
+	TrioCmd("gui:set_statusbar_color 180 0 0")	
+end if
+
+
+''''''''''''FUNCTIONS''''''''''''''
+
+Function m_Team1(nv_Nickname1)
+	v_LeagueX = TrioCmd("page:get_property A0100")
+	
+	cv_Tricode = UCase(v_PlyrTeam1)
+	
+	if v_LeagueX = "MLB" then	
+		Select Case cv_Tricode
+			Case "ARI"
+				nv_Market = "ARIZONA"
+				nv_Nickname1 = "DIAMONDBACKS"
+			Case "ATL"
+				nv_Market = "ATLANTA"
+				nv_Nickname1 = "BRAVES"
+			Case "BAL"
+				nv_Market = "BALTIMORE"
+				nv_Nickname1 = "ORIOLES"
+			Case "BOS"
+				nv_Market = "BOSTON"
+				nv_Nickname1 = "RED SOX"
+			Case "CHC"
+				nv_Market = "CHICAGO"
+				nv_Nickname1 = "CUBS"
+			Case "CHW"
+				nv_Market = "CHICAGO"
+				nv_Nickname1 = "WHITE SOX"
+			Case "CIN"
+				nv_Market = "CINCINNATI"
+				nv_Nickname1 = "REDS"	
+			Case "CLE"
+				nv_Market = "CLEVELAND"
+				nv_Nickname1 = "GUARDIANS"	
+			Case "COL"
+				nv_Market = "COLORADO"
+				nv_Nickname1 = "ROCKIES"
+			Case "DET"
+				nv_Market = "DETROIT"
+				nv_Nickname1 = "TIGERS"
+			Case "HOU"
+				nv_Market = "HOUSTON"
+				nv_Nickname1 = "ASTROS"
+			Case "KC"
+				nv_Market = "KANSAS CITY"
+				nv_Nickname1 = "ROYALS"
+			Case "LAA"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname1 = "ANGELS"
+			Case "LAD"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname1 = "DODGERS"
+			Case "MIA"
+				nv_Market = "MIAMI"
+				nv_Nickname1 = "MARLINS"
+			Case "MIL"
+				nv_Market = "MILWAUKEE"
+				nv_Nickname1 = "BREWERS"
+			Case "MIN"
+				nv_Market = "MINNESOTA"
+				nv_Nickname1 = "TWINS"
+			Case "NYM"
+				nv_Market = "NEW YORK"
+				nv_Nickname1 = "METS"	
+			Case "NYY"
+				nv_Market = "NEW YORK"
+				nv_Nickname1 = "YANKEES"
+			Case "OAK"
+				nv_Market = "OAKLAND"
+				nv_Nickname1 = "ATHLETICS"
+			Case "PHI"
+				nv_Market = "PHILADELPHIA"
+				nv_Nickname1 = "PHILLIES"
+			Case "PIT"
+				nv_Market = "PITTSBURGH"
+				nv_Nickname1 = "PIRATES"
+			Case "SD"
+				nv_Market = "SAN DIEGO"
+				nv_Nickname1 = "PADRES"
+			Case "SEA"
+				nv_Market = "SEATTLE"
+				nv_Nickname1 = "MARINERS"
+			Case "SF"
+				nv_Market = "SAN FRANCISCO"
+				nv_Nickname1 = "GIANTS"
+			Case "STL"
+				nv_Market = "ST. LOUIS"
+				nv_Nickname1 = "CARDINALS"
+			Case "TB"
+				nv_Market = "TAMPA BAY"
+				nv_Nickname1 = "RAYS"
+			Case "TEX"
+				nv_Market = "TEXAS"
+				nv_Nickname1 = "RANGERS"
+			Case "TOR"
+				nv_Market = "TORONTO"
+				nv_Nickname1 = "BLUE JAYS"
+			Case "WSH"
+				nv_Market = "WASHINGTON"
+				nv_Nickname1 = "NATIONALS"
+			Case Else
+				'nv_Market = ""
+				'nv_Nickname1 = ""
+		End Select
+	elseif v_LeagueX = "NBA" then	
+		Select Case cv_Tricode
+			Case "ATL"
+				nv_Market = "ATLANTA"
+				nv_Nickname1 = "HAWKS"
+			Case "BOS"
+				nv_Market = "BOSTON"
+				nv_Nickname1 = "CELTICS"
+			Case "BKN"
+				nv_Market = "BROOKLYN"
+				nv_Nickname1 = "NETS"
+			Case "CHA"
+				nv_Market = "CHARLOTTE"
+				nv_Nickname1 = "HORNETS"
+			Case "CHI"
+				nv_Market = "CHICAGO"
+				nv_Nickname1 = "BULLS"
+			Case "CLE"
+				nv_Market = "CLEVELAND"
+				nv_Nickname1 = "CAVALIERS"
+			Case "DAL"
+				nv_Market = "DALLAS"
+				nv_Nickname1 = "MAVERICKS"	
+			Case "DEN"
+				nv_Market = "DENVER"
+				nv_Nickname1 = "NUGGETS"	
+			Case "DET"
+				nv_Market = "DETROIT"
+				nv_Nickname1 = "PISTONS"
+			Case "GS"
+				nv_Market = "GOLDEN STATE"
+				nv_Nickname1 = "WARRIORS"
+			Case "HOU"
+				nv_Market = "HOUSTON"
+				nv_Nickname1 = "ROCKETS"
+			Case "IND"
+				nv_Market = "INDIANA"
+				nv_Nickname1 = "PACERS"
+			Case "LAC"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname1 = "CLIPPERS"
+			Case "LAL"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname1 = "LAKERS"
+			Case "MEM"
+				nv_Market = "MEMPHIS"
+				nv_Nickname1 = "GRIZZLIES"
+			Case "MIA"
+				nv_Market = "MIAMI"
+				nv_Nickname1 = "HEAT"
+			Case "MIL"
+				nv_Market = "MILWAUKEE"
+				nv_Nickname1 = "BUCKS"
+			Case "MIN"
+				nv_Market = "MINNESOTA"
+				nv_Nickname1 = "TIMBERWOLVES"	
+			Case "NO"
+				nv_Market = "NEW ORLEANS"
+				nv_Nickname1 = "PELICANS"
+			Case "NY"
+				nv_Market = "NEW YORK"
+				nv_Nickname1 = "KNICKS"
+			Case "ORL"
+				nv_Market = "ORLANDO"
+				nv_Nickname1 = "MAGIC"
+			Case "PHI"
+				nv_Market = "PHILADELPHIA"
+				nv_Nickname1 = "76ers"
+			Case "PHX"
+				nv_Market = "PHOENIX"
+				nv_Nickname1 = "SUNS"
+			Case "POR"
+				nv_Market = "PORTLAND"
+				nv_Nickname1 = "TRAIL BLAZERS"
+			Case "SAC"
+				nv_Market = "SACRAMENTO"
+				nv_Nickname1 = "KINGS"
+			Case "SA"
+				nv_Market = "SAN ANTONIO"
+				nv_Nickname1 = "SPURS"
+			Case "OKC"
+				nv_Market = "OKLAHOMA CITY"
+				nv_Nickname1 = "THUNDER"
+			Case "TOR"
+				nv_Market = "TORONTO"
+				nv_Nickname1 = "RAPTORS"
+			Case "UTAH"
+				nv_Market = "UTAH"
+				nv_Nickname1 = "JAZZ"
+			Case "WSH","WAS"
+				nv_Market = "WASHINGTON"
+				nv_Nickname1 = "WIZARDS"
+			Case Else
+				'nv_Market = ""
+				'nv_Nickname1 = ""
+		End Select
+	elseif v_LeagueX = "NHL" then	
+		Select Case cv_Tricode
+			Case "ANA"
+				nv_Market = "ANAHEIM"
+				nv_Nickname1 = "DUCKS"
+			Case "ARI"
+				nv_Market = "ARIZONA"
+				nv_Nickname1 = "COYOTES"
+			Case "BOS"
+				nv_Market = "BOSTON"
+				nv_Nickname1 = "BRUINS"
+			Case "BUF"
+				nv_Market = "BUFFALO"
+				nv_Nickname1 = "SABRES"
+			Case "CGY"
+				nv_Market = "CALGARY"
+				nv_Nickname1 = "FLAMES"
+			Case "CAR"
+				nv_Market = "CAROLINA"
+				nv_Nickname1 = "HURRICANES"
+			Case "CHI"
+				nv_Market = "CHICAGO"
+				nv_Nickname1 = "BLACKHAWKS"	
+			Case "COL"
+				nv_Market = "COLORADO"
+				nv_Nickname1 = "AVALANCHE"	
+			Case "CBJ"
+				nv_Market = "COLUMBUS"
+				nv_Nickname1 = "BLUE JACKETS"
+			Case "DAL"
+				nv_Market = "DALLAS"
+				nv_Nickname1 = "STARS"
+			Case "DET"
+				nv_Market = "DETROIT"
+				nv_Nickname1 = "RED WINGS"
+			Case "EDM"
+				nv_Market = "EDMONTON"
+				nv_Nickname1 = "OILERS"
+			Case "FLA"
+				nv_Market = "FLORIDA"
+				nv_Nickname1 = "PANTHERS"
+			Case "LA"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname1 = "KINGS"
+			Case "MIN"
+				nv_Market = "MINNESOTA"
+				nv_Nickname1 = "WILD"
+			Case "MTL"
+				nv_Market = "MONTREAL"
+				nv_Nickname1 = "CANADIENS"
+			Case "NSH"
+				nv_Market = "NASHVILLE"
+				nv_Nickname1 = "PREDATORS"
+			Case "NJ"
+				nv_Market = "NEW JERSEY"
+				nv_Nickname1 = "DEVILS"	
+			Case "NYI"
+				nv_Market = "NEW YORK"
+				nv_Nickname1 = "ISLANDERS"
+			Case "NYR"
+				nv_Market = "NEW YORK"
+				nv_Nickname1 = "RANGERS"
+			Case "OTT"
+				nv_Market = "OTTAWA"
+				nv_Nickname1 = "SENATORS"
+			Case "PHI"
+				nv_Market = "PHILADELPHIA"
+				nv_Nickname1 = "FLYERS"
+			Case "PIT"
+				nv_Market = "PITTSBURGH"
+				nv_Nickname1 = "PENGUINS"
+			Case "SJ"
+				nv_Market = "SAN JOSE"
+				nv_Nickname1 = "SHARKS"
+			Case "SEA"
+				nv_Market = "SEATTLE"
+				nv_Nickname1 = "KRAKEN"
+			Case "STL"
+				nv_Market = "ST. LOUIS"
+				nv_Nickname1 = "BLUES"
+			Case "TB"
+				nv_Market = "TAMPA BAY"
+				nv_Nickname1 = "LIGHTNING"
+			Case "TOR"
+				nv_Market = "TORONTO"
+				nv_Nickname1 = "MAPLE LEAFS"
+			Case "VGK"
+				nv_Market = "VEGAS"
+				nv_Nickname1 = "GOLDEN KNIGHTS"
+			Case "VAN"
+				nv_Market = "VANCOUVER"
+				nv_Nickname1 = "CANUCKS"
+			Case "WSH"
+				nv_Market = "WASHINGTON"
+				nv_Nickname1 = "CAPITALS"
+			Case "WPG"
+				nv_Market = "WINNIPEG"
+				nv_Nickname1 = "JETS"	
+			Case Else
+				'nv_Market = ""
+				'nv_Nickname1 = ""
+		End Select
+	elseif v_LeagueX = "NFL" then	
+		Select Case cv_Tricode
+			Case "ARI"
+				nv_Market = "ARIZONA"
+				nv_Nickname1 = "CARDINALS"
+			Case "ATL"
+				nv_Market = "ATLANTA"
+				nv_Nickname1 = "FALCONS"
+			Case "BAL"
+				nv_Market = "BALTIMORE"
+				nv_Nickname1 = "RAVENS"
+			Case "BUF"
+				nv_Market = "BUFFALO"
+				nv_Nickname1 = "BILLS"
+			Case "CAR"
+				nv_Market = "CAROLINA"
+				nv_Nickname1 = "PANTHERS"
+			Case "CHI"
+				nv_Market = "CHICAGO"
+				nv_Nickname1 = "BEARS"
+			Case "CIN"
+				nv_Market = "CINCINNATI"
+				nv_Nickname1 = "BENGALS"	
+			Case "CLE"
+				nv_Market = "CLEVELAND"
+				nv_Nickname1 = "BROWNS"	
+			Case "DAL"
+				nv_Market = "DALLAS"
+				nv_Nickname1 = "COWBOYS"
+			Case "DEN"
+				nv_Market = "DENVER"
+				nv_Nickname1 = "BRONCOS"
+			Case "DET"
+				nv_Market = "DETROIT"
+				nv_Nickname1 = "LIONS"
+			Case "GB"
+				nv_Market = "GREEN BAY"
+				nv_Nickname1 = "PACKERS"
+			Case "HOU"
+				nv_Market = "HOUSTON"
+				nv_Nickname1 = "TEXANS"
+			Case "IND"
+				nv_Market = "INDIANAPOLIS"
+				nv_Nickname1 = "COLTS"
+			Case "JAX"
+				nv_Market = "JACKSONVILLE"
+				nv_Nickname1 = "JAGUARS"
+			Case "KC"
+				nv_Market = "KANSAS CITY"
+				nv_Nickname1 = "CHIEFS"
+			Case "LV"
+				nv_Market = "LAS VEGAS"
+				nv_Nickname1 = "RAIDERS"
+			Case "LAC"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname1 = "CHARGERS"	
+			Case "LAR"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname1 = "RAMS"
+			Case "MIA"
+				nv_Market = "MIAMI"
+				nv_Nickname1 = "DOLPHINS"
+			Case "MIN"
+				nv_Market = "MINNESOTA"
+				nv_Nickname1 = "VIKINGS"
+			Case "NE"
+				nv_Market = "NEW ENGLAND"
+				nv_Nickname1 = "PATRIOTS"
+			Case "NO"
+				nv_Market = "NEW ORLEANS"
+				nv_Nickname1 = "SAINTS"
+			Case "NYG"
+				nv_Market = "NEW YORK"
+				nv_Nickname1 = "GIANTS"
+			Case "NYJ"
+				nv_Market = "NEW YORK"
+				nv_Nickname1 = "JETS"
+			Case "PHI"
+				nv_Market = "PHILADELPHIA"
+				nv_Nickname1 = "EAGLES"
+			Case "PIT"
+				nv_Market = "PITTSBURGH"
+				nv_Nickname1 = "STEELERS"
+			Case "SF"
+				nv_Market = "SAN FRANCISCO"
+				nv_Nickname1 = "49ers"
+			Case "SEA"
+				nv_Market = "SEATTLE"
+				nv_Nickname1 = "SEAHAWKS"
+			Case "TB"
+				nv_Market = "TAMPA BAY"
+				nv_Nickname1 = "BUCCANEERS"
+			Case "TEN"
+				nv_Market = "TENNESSEE"
+				nv_Nickname1 = "TITANS"
+			Case "WSH"
+				nv_Market = "WASHINGTON"
+				nv_Nickname1 = "COMMANDERS"
+			Case Else
+				'nv_Market = ""
+				'nv_Nickname1 = ""
+		End Select
+	else
+		Exit Function
+	end if
+End Function
+
+Function m_Team2(nv_Nickname2)
+	v_LeagueX = TrioCmd("page:get_property A0100")
+	
+	cv_Tricode = UCase(v_PlyrTeam2)
+	
+	if v_LeagueX = "MLB" then	
+		Select Case cv_Tricode
+			Case "ARI"
+				nv_Market = "ARIZONA"
+				nv_Nickname2 = "DIAMONDBACKS"
+			Case "ATL"
+				nv_Market = "ATLANTA"
+				nv_Nickname2 = "BRAVES"
+			Case "BAL"
+				nv_Market = "BALTIMORE"
+				nv_Nickname2 = "ORIOLES"
+			Case "BOS"
+				nv_Market = "BOSTON"
+				nv_Nickname2 = "RED SOX"
+			Case "CHC"
+				nv_Market = "CHICAGO"
+				nv_Nickname2 = "CUBS"
+			Case "CHW"
+				nv_Market = "CHICAGO"
+				nv_Nickname2 = "WHITE SOX"
+			Case "CIN"
+				nv_Market = "CINCINNATI"
+				nv_Nickname2 = "REDS"	
+			Case "CLE"
+				nv_Market = "CLEVELAND"
+				nv_Nickname2 = "GUARDIANS"	
+			Case "COL"
+				nv_Market = "COLORADO"
+				nv_Nickname2 = "ROCKIES"
+			Case "DET"
+				nv_Market = "DETROIT"
+				nv_Nickname2 = "TIGERS"
+			Case "HOU"
+				nv_Market = "HOUSTON"
+				nv_Nickname2 = "ASTROS"
+			Case "KC"
+				nv_Market = "KANSAS CITY"
+				nv_Nickname2 = "ROYALS"
+			Case "LAA"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname2 = "ANGELS"
+			Case "LAD"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname2 = "DODGERS"
+			Case "MIA"
+				nv_Market = "MIAMI"
+				nv_Nickname2 = "MARLINS"
+			Case "MIL"
+				nv_Market = "MILWAUKEE"
+				nv_Nickname2 = "BREWERS"
+			Case "MIN"
+				nv_Market = "MINNESOTA"
+				nv_Nickname2 = "TWINS"
+			Case "NYM"
+				nv_Market = "NEW YORK"
+				nv_Nickname2 = "METS"	
+			Case "NYY"
+				nv_Market = "NEW YORK"
+				nv_Nickname2 = "YANKEES"
+			Case "OAK"
+				nv_Market = "OAKLAND"
+				nv_Nickname2 = "ATHLETICS"
+			Case "PHI"
+				nv_Market = "PHILADELPHIA"
+				nv_Nickname2 = "PHILLIES"
+			Case "PIT"
+				nv_Market = "PITTSBURGH"
+				nv_Nickname2 = "PIRATES"
+			Case "SD"
+				nv_Market = "SAN DIEGO"
+				nv_Nickname2 = "PADRES"
+			Case "SEA"
+				nv_Market = "SEATTLE"
+				nv_Nickname2 = "MARINERS"
+			Case "SF"
+				nv_Market = "SAN FRANCISCO"
+				nv_Nickname2 = "GIANTS"
+			Case "STL"
+				nv_Market = "ST. LOUIS"
+				nv_Nickname2 = "CARDINALS"
+			Case "TB"
+				nv_Market = "TAMPA BAY"
+				nv_Nickname2 = "RAYS"
+			Case "TEX"
+				nv_Market = "TEXAS"
+				nv_Nickname2 = "RANGERS"
+			Case "TOR"
+				nv_Market = "TORONTO"
+				nv_Nickname2 = "BLUE JAYS"
+			Case "WSH"
+				nv_Market = "WASHINGTON"
+				nv_Nickname2 = "NATIONALS"
+			Case Else
+				'nv_Market = ""
+				'nv_Nickname2 = ""
+		End Select
+	elseif v_LeagueX = "NBA" then	
+		Select Case cv_Tricode
+			Case "ATL"
+				nv_Market = "ATLANTA"
+				nv_Nickname2 = "HAWKS"
+			Case "BOS"
+				nv_Market = "BOSTON"
+				nv_Nickname2 = "CELTICS"
+			Case "BKN"
+				nv_Market = "BROOKLYN"
+				nv_Nickname2 = "NETS"
+			Case "CHA"
+				nv_Market = "CHARLOTTE"
+				nv_Nickname2 = "HORNETS"
+			Case "CHI"
+				nv_Market = "CHICAGO"
+				nv_Nickname2 = "BULLS"
+			Case "CLE"
+				nv_Market = "CLEVELAND"
+				nv_Nickname2 = "CAVALIERS"
+			Case "DAL"
+				nv_Market = "DALLAS"
+				nv_Nickname2 = "MAVERICKS"	
+			Case "DEN"
+				nv_Market = "DENVER"
+				nv_Nickname2 = "NUGGETS"	
+			Case "DET"
+				nv_Market = "DETROIT"
+				nv_Nickname2 = "PISTONS"
+			Case "GS"
+				nv_Market = "GOLDEN STATE"
+				nv_Nickname2 = "WARRIORS"
+			Case "HOU"
+				nv_Market = "HOUSTON"
+				nv_Nickname2 = "ROCKETS"
+			Case "IND"
+				nv_Market = "INDIANA"
+				nv_Nickname2 = "PACERS"
+			Case "LAC"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname2 = "CLIPPERS"
+			Case "LAL"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname2 = "LAKERS"
+			Case "MEM"
+				nv_Market = "MEMPHIS"
+				nv_Nickname2 = "GRIZZLIES"
+			Case "MIA"
+				nv_Market = "MIAMI"
+				nv_Nickname2 = "HEAT"
+			Case "MIL"
+				nv_Market = "MILWAUKEE"
+				nv_Nickname2 = "BUCKS"
+			Case "MIN"
+				nv_Market = "MINNESOTA"
+				nv_Nickname2 = "TIMBERWOLVES"	
+			Case "NO"
+				nv_Market = "NEW ORLEANS"
+				nv_Nickname2 = "PELICANS"
+			Case "NY"
+				nv_Market = "NEW YORK"
+				nv_Nickname2 = "KNICKS"
+			Case "ORL"
+				nv_Market = "ORLANDO"
+				nv_Nickname2 = "MAGIC"
+			Case "PHI"
+				nv_Market = "PHILADELPHIA"
+				nv_Nickname2 = "76ers"
+			Case "PHX"
+				nv_Market = "PHOENIX"
+				nv_Nickname2 = "SUNS"
+			Case "POR"
+				nv_Market = "PORTLAND"
+				nv_Nickname2 = "TRAIL BLAZERS"
+			Case "SAC"
+				nv_Market = "SACRAMENTO"
+				nv_Nickname2 = "KINGS"
+			Case "SA"
+				nv_Market = "SAN ANTONIO"
+				nv_Nickname2 = "SPURS"
+			Case "OKC"
+				nv_Market = "OKLAHOMA CITY"
+				nv_Nickname2 = "THUNDER"
+			Case "TOR"
+				nv_Market = "TORONTO"
+				nv_Nickname2 = "RAPTORS"
+			Case "UTAH"
+				nv_Market = "UTAH"
+				nv_Nickname2 = "JAZZ"
+			Case "WSH","WAS"
+				nv_Market = "WASHINGTON"
+				nv_Nickname2 = "WIZARDS"
+			Case Else
+				'nv_Market = ""
+				'nv_Nickname2 = ""
+		End Select
+	elseif v_LeagueX = "NHL" then	
+		Select Case cv_Tricode
+			Case "ANA"
+				nv_Market = "ANAHEIM"
+				nv_Nickname2 = "DUCKS"
+			Case "ARI"
+				nv_Market = "ARIZONA"
+				nv_Nickname2 = "COYOTES"
+			Case "BOS"
+				nv_Market = "BOSTON"
+				nv_Nickname2 = "BRUINS"
+			Case "BUF"
+				nv_Market = "BUFFALO"
+				nv_Nickname2 = "SABRES"
+			Case "CGY"
+				nv_Market = "CALGARY"
+				nv_Nickname2 = "FLAMES"
+			Case "CAR"
+				nv_Market = "CAROLINA"
+				nv_Nickname2 = "HURRICANES"
+			Case "CHI"
+				nv_Market = "CHICAGO"
+				nv_Nickname2 = "BLACKHAWKS"	
+			Case "COL"
+				nv_Market = "COLORADO"
+				nv_Nickname2 = "AVALANCHE"	
+			Case "CBJ"
+				nv_Market = "COLUMBUS"
+				nv_Nickname2 = "BLUE JACKETS"
+			Case "DAL"
+				nv_Market = "DALLAS"
+				nv_Nickname2 = "STARS"
+			Case "DET"
+				nv_Market = "DETROIT"
+				nv_Nickname2 = "RED WINGS"
+			Case "EDM"
+				nv_Market = "EDMONTON"
+				nv_Nickname2 = "OILERS"
+			Case "FLA"
+				nv_Market = "FLORIDA"
+				nv_Nickname2 = "PANTHERS"
+			Case "LA"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname2 = "KINGS"
+			Case "MIN"
+				nv_Market = "MINNESOTA"
+				nv_Nickname2 = "WILD"
+			Case "MTL"
+				nv_Market = "MONTREAL"
+				nv_Nickname2 = "CANADIENS"
+			Case "NSH"
+				nv_Market = "NASHVILLE"
+				nv_Nickname2 = "PREDATORS"
+			Case "NJ"
+				nv_Market = "NEW JERSEY"
+				nv_Nickname2 = "DEVILS"	
+			Case "NYI"
+				nv_Market = "NEW YORK"
+				nv_Nickname2 = "ISLANDERS"
+			Case "NYR"
+				nv_Market = "NEW YORK"
+				nv_Nickname2 = "RANGERS"
+			Case "OTT"
+				nv_Market = "OTTAWA"
+				nv_Nickname2 = "SENATORS"
+			Case "PHI"
+				nv_Market = "PHILADELPHIA"
+				nv_Nickname2 = "FLYERS"
+			Case "PIT"
+				nv_Market = "PITTSBURGH"
+				nv_Nickname2 = "PENGUINS"
+			Case "SJ"
+				nv_Market = "SAN JOSE"
+				nv_Nickname2 = "SHARKS"
+			Case "SEA"
+				nv_Market = "SEATTLE"
+				nv_Nickname2 = "KRAKEN"
+			Case "STL"
+				nv_Market = "ST. LOUIS"
+				nv_Nickname2 = "BLUES"
+			Case "TB"
+				nv_Market = "TAMPA BAY"
+				nv_Nickname2 = "LIGHTNING"
+			Case "TOR"
+				nv_Market = "TORONTO"
+				nv_Nickname2 = "MAPLE LEAFS"
+			Case "VGK"
+				nv_Market = "VEGAS"
+				nv_Nickname2 = "GOLDEN KNIGHTS"
+			Case "VAN"
+				nv_Market = "VANCOUVER"
+				nv_Nickname2 = "CANUCKS"
+			Case "WSH"
+				nv_Market = "WASHINGTON"
+				nv_Nickname2 = "CAPITALS"
+			Case "WPG"
+				nv_Market = "WINNIPEG"
+				nv_Nickname2 = "JETS"	
+			Case Else
+				'nv_Market = ""
+				'nv_Nickname2 = ""
+		End Select
+	elseif v_LeagueX = "NFL" then	
+		Select Case cv_Tricode
+			Case "ARI"
+				nv_Market = "ARIZONA"
+				nv_Nickname2 = "CARDINALS"
+			Case "ATL"
+				nv_Market = "ATLANTA"
+				nv_Nickname2 = "FALCONS"
+			Case "BAL"
+				nv_Market = "BALTIMORE"
+				nv_Nickname2 = "RAVENS"
+			Case "BUF"
+				nv_Market = "BUFFALO"
+				nv_Nickname2 = "BILLS"
+			Case "CAR"
+				nv_Market = "CAROLINA"
+				nv_Nickname2 = "PANTHERS"
+			Case "CHI"
+				nv_Market = "CHICAGO"
+				nv_Nickname2 = "BEARS"
+			Case "CIN"
+				nv_Market = "CINCINNATI"
+				nv_Nickname2 = "BENGALS"	
+			Case "CLE"
+				nv_Market = "CLEVELAND"
+				nv_Nickname2 = "BROWNS"	
+			Case "DAL"
+				nv_Market = "DALLAS"
+				nv_Nickname2 = "COWBOYS"
+			Case "DEN"
+				nv_Market = "DENVER"
+				nv_Nickname2 = "BRONCOS"
+			Case "DET"
+				nv_Market = "DETROIT"
+				nv_Nickname2 = "LIONS"
+			Case "GB"
+				nv_Market = "GREEN BAY"
+				nv_Nickname2 = "PACKERS"
+			Case "HOU"
+				nv_Market = "HOUSTON"
+				nv_Nickname2 = "TEXANS"
+			Case "IND"
+				nv_Market = "INDIANAPOLIS"
+				nv_Nickname2 = "COLTS"
+			Case "JAX"
+				nv_Market = "JACKSONVILLE"
+				nv_Nickname2 = "JAGUARS"
+			Case "KC"
+				nv_Market = "KANSAS CITY"
+				nv_Nickname2 = "CHIEFS"
+			Case "LV"
+				nv_Market = "LAS VEGAS"
+				nv_Nickname2 = "RAIDERS"
+			Case "LAC"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname2 = "CHARGERS"	
+			Case "LAR"
+				nv_Market = "LOS ANGELES"
+				nv_Nickname2 = "RAMS"
+			Case "MIA"
+				nv_Market = "MIAMI"
+				nv_Nickname2 = "DOLPHINS"
+			Case "MIN"
+				nv_Market = "MINNESOTA"
+				nv_Nickname2 = "VIKINGS"
+			Case "NE"
+				nv_Market = "NEW ENGLAND"
+				nv_Nickname2 = "PATRIOTS"
+			Case "NO"
+				nv_Market = "NEW ORLEANS"
+				nv_Nickname2 = "SAINTS"
+			Case "NYG"
+				nv_Market = "NEW YORK"
+				nv_Nickname2 = "GIANTS"
+			Case "NYJ"
+				nv_Market = "NEW YORK"
+				nv_Nickname2 = "JETS"
+			Case "PHI"
+				nv_Market = "PHILADELPHIA"
+				nv_Nickname2 = "EAGLES"
+			Case "PIT"
+				nv_Market = "PITTSBURGH"
+				nv_Nickname2 = "STEELERS"
+			Case "SF"
+				nv_Market = "SAN FRANCISCO"
+				nv_Nickname2 = "49ers"
+			Case "SEA"
+				nv_Market = "SEATTLE"
+				nv_Nickname2 = "SEAHAWKS"
+			Case "TB"
+				nv_Market = "TAMPA BAY"
+				nv_Nickname2 = "BUCCANEERS"
+			Case "TEN"
+				nv_Market = "TENNESSEE"
+				nv_Nickname2 = "TITANS"
+			Case "WSH"
+				nv_Market = "WASHINGTON"
+				nv_Nickname2 = "COMMANDERS"
+			Case Else
+				'nv_Market = ""
+				'nv_Nickname2 = ""
+		End Select
+	else
+		Exit Function
+	end if
+End Function
+
+Function m_vtwVersion(v_vtwNumber,v_WPrefresh)
+	v_vtwCheck = a_vtwCheck
+	Set regEx = New RegExp
+	regEx.Pattern = "\d+(\.\d+)?"
+	Set matches = regEx.Execute(v_vtwCheck)
+	v_vtwNumber = matches(0).Value
+	
+	if (v_vtwNumber < 4.6) then
+		v_WPrefresh = "NO"
+	else
+		v_WPrefresh = "YES"
+	end if
+End Function
+
+Function m_SecondaryNotes()
+	'*** CHANGE "NO" to "YES" on Line 10 or 11 if you want CGLINK Inserts to show Player Jersey or Position or Both.  
+	
+	'v_Cat2 = TrioCmd("page:get_property H0200")
+	'v_Foot = TrioCmd("page:get_property Z0900")
+	
+	'v_Cat2 = replace(v_Cat2, "*AY ", "")
+	'v_Cat2 = replace(v_Cat2, "*AY", "")
+	'v_Cat2 = replace(v_Cat2, "{", "")
+	'v_Cat2 = replace(v_Cat2, "}", "")
+	'v_Foot = replace(v_Foot, "[", "")
+	'v_Foot = replace(v_Foot, "]", "")
+	'v_Foot = replace(v_Foot, "{", "")
+	'v_Foot = replace(v_Foot, "}", "")
+	
+	if len(v_Cat2) > 0 then
+		v_Cat2 = "(" & v_Cat2 & ")"
+	else
+		v_Cat2 = ""
+	end if
+
+	if len(v_Foot) > 0 then
+		v_Foot = "(" & v_Foot & ")"
+		v_Stat2 = "|"
+	else
+		v_Foot = ""
+	end if
+	
+	if v_Cat2 = "" then
+		v_Cat2 = v_Foot
+	else
+		v_Cat2 = v_Cat2
+	end if
+	
+	if v_Cat2 = "" then
+		TrioCmd("page:set_property H0101 " & v_Cat1)
+		TrioCmd("page:set_property H0200 " & "")
+		TrioCmd("page:set_property H0201 " & "")
+	else
+		TrioCmd("page:set_property H0101 " & v_Cat1)
+		TrioCmd("page:set_property H0200 " & "")
+		TrioCmd("page:set_property H0201 " & v_Cat2)
+	end if
+End Function

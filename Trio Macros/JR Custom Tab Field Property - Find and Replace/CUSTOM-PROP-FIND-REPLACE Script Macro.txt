@@ -1,0 +1,21 @@
+           TrioCmd ("page:tabtotabfield 000")
+Dim cstm, cstmbol
+mv1 = inputbox("What portion of the custom properties do you want to replace?","Jordan's Custom Replacement Tool","team.")
+mv2 = inputbox("What do you want to replace " & mv1 & " with?","Jordan's Custom Replacement Tool","team1.")
+
+For i = 0 to TrioCmd("page:get_tabfield_count")
+cstm = TrioCmd("tabfield:get_custom_property  ")
+If Not cstm = "" Then
+
+cstmbol = InStr(1, cstm, mv1, VBTextCompare)
+If cstmbol > 0 Then
+TrioCmd("tabfield:set_custom_property  " & Replace(cstm, mv1, mv2, VBTextCompare))
+Elseif cstmbol = 0 Then
+TrioCmd("gui:status_message Tabfield blank. No action taken.")
+End If
+
+Else
+TrioCmd("gui:status_message Tabfield blank. No action taken.")
+End If
+TrioCmd("page:tab")
+Next

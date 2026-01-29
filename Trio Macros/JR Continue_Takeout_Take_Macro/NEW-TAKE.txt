@@ -1,0 +1,18 @@
+'JORDAN: NEW TAKE (KEY: {TAKE})
+'REGULAR TAKE THAT STORES VALUES OF LAST PAGE SENT TO VIZ-1 OR VIZ-2. USED FOR THE NEW TAKEOUT & NEW CONTINUE
+
+c_progchannel = TrioCmd("channelcontrol:get_program_channel")
+c_pagename = TrioCmd("page:getpagename")
+c_pagelayer = TrioCmd("page:get_viz_layer")
+
+if c_progchannel = "VIZ-1" then
+	TrioCmd("show:set_variable lt_page1 " & c_pagename)
+	TrioCmd("show:set_variable lt_layer1 " & c_pagelayer)
+end if
+
+if c_progchannel = "VIZ-2" then
+	TrioCmd("show:set_variable lt_page2 " & c_pagename)
+	TrioCmd("show:set_variable lt_layer2 " & c_pagelayer)
+end if
+
+TrioCmd("page:take")

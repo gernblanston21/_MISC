@@ -1,0 +1,32 @@
+' MULTI[Player1=LAA(27), Player2=CHW(88), and Player3=TOR()] 
+CurrentPageName = TrioCmd("page:getpagename")
+
+Instructions = "Enter Team Tricode followed by a space and then the Jersey#. Use a comma to seperate additional teams/players. "
+Instructions = Instructions & chr(10) & chr(10) & "EXAMPLE ENTRY: LAL 23, DET, ATL 11, MIA 22"  
+Instructions = Instructions & chr(10) & chr(10) & "After entering the data above, use OnAirV3 syntax like the ones below in custom properties inside Trio base pages to reference those players/teams"
+Instructions = Instructions & chr(10) & "{{info.Player1.full_name}} =  LEBRON JAMES"
+Instructions = Instructions & chr(10) & "{{info.Team2.name}} =  PISTONS"
+Instructions = Instructions & chr(10) & "{{info.Player3.first_name}} =  TRAE"
+Instructions = Instructions & chr(10) & "{{info.Player4.abbr_name}} =  J. BUTLER"
+
+temp = Ucase(InputBox(Instructions, "ONAIRv3 F5 MACRO", ""))
+
+temp = Replace(temp, ", ", ",")
+
+temp_arr = split(temp, ",")
+
+command = "MULTI[" 
+
+for i = 0 to ubound(temp_arr)
+  item_arr = Split(temp_arr(i), " ") 
+  if Ubound(item_arr) = 1 then command = command & "Player" & cstr(i+1) & "=" & item_arr(0) & "(" & item_arr(1) & ")," & "Team" & cstr(i+1) & "=" & item_arr(0) & "(),"   
+  if Ubound(item_arr) = 0 then command = command & "Player" & cstr(i+1) & "=" & item_arr(0) & "()," & "Team" & cstr(i+1) & "=" & item_arr(0) & "()," 
+next
+
+command = Left(command, Len(command) -1)
+command = command & "]"
+
+TrioCmd("tabfield:set_custom_property A* " & command)
+TrioCmd("page:save")
+'TrioCmd("page:read")
+TrioCmd("page:read " & CurrentPageName)

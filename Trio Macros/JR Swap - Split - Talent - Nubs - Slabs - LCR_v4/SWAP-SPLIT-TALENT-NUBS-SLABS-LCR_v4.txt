@@ -1,0 +1,159 @@
+'JORDAN: SWAP SPLIT, TALENT OR LCR NUBS, SLABS (KEY: {})
+
+'--- LRC OR SWAP L/R ---
+
+Dim tab_value
+
+t = TrioCmd("page:getpagetemplate")
+ 
+if left(t, 4) = "L3_T" then
+talentNum = TrioCmd("page:get_property C0000")
+	if talentNum = 1 then
+		tab_value = TrioCmd("page:get_property C0010")
+			if tab_value = 0 then
+				TrioCmd("page:set_property C0010 1")
+			elseif tab_value = 1 then
+				TrioCmd("page:set_property C0010 2")
+			else
+				TrioCmd("page:set_property C0010 0")
+		end if
+	elseif talentNum = 2 then
+		LeftQual = TrioCmd("page:get_property H1100")
+		LeftName = TrioCmd("page:get_property H1101")
+		LeftSocial = TrioCmd("page:get_property H1110")
+		
+		RightQual = TrioCmd("page:get_property H1200")
+		RightName = TrioCmd("page:get_property H1201")
+		RightSocial = TrioCmd("page:get_property H1210")
+		
+		TrioCmd("page:set_property H1100 " & RightQual)
+		TrioCmd("page:set_property H1101 " & RightName)
+		TrioCmd("page:set_property H1110 " & RightSocial)
+		
+		TrioCmd("page:set_property H1200 " & LeftQual)
+		TrioCmd("page:set_property H1201 " & LeftName)
+		TrioCmd("page:set_property H1210 " & LeftSocial)
+	else
+		t1name = TrioCmd("page:get_property H1101")
+		t2name = TrioCmd("page:get_property H1201")
+		t3name = TrioCmd("page:get_property H1301")
+		t1social = TrioCmd("page:get_property H1110")
+		t2social = TrioCmd("page:get_property H1210")
+		t3social = TrioCmd("page:get_property H1310")
+		
+		tswap1 = inputbox("What spot do you want to move","Talent Mover","1")
+		tswap2 = inputbox("What spot do you want to swap","Talent Mover","2")
+		
+		Select Case tswap1
+		
+			Case "1"
+				tx1name = t1name
+				tx1social = t1social
+				t1x = "H1101"
+				t1xx = "H1110"
+			Case "2"
+				tx1name = t2name
+				tx1social = t2social
+				t1x = "H1201"
+				t1xx = "H1210"
+			Case "3"
+				tx1name = t3name
+				tx1social = t3social
+				t1x = "H1301"
+				t1xx = "H1310"
+			Case Else
+				TrioCmd("trio:sleep 10")
+				TrioCmd("gui:error_message Not a valid selection")
+		
+		End Select
+		
+		Select Case tswap2
+		
+			Case "1"
+				tx2name = t1name
+				tx2social = t1social
+				t2x = "H1101"
+				t2xx = "H1110"
+			Case "2"
+				tx2name = t2name
+				tx2social = t2social
+				t2x = "H1201"
+				t2xx = "H1210"
+			Case "3"
+				tx2name = t3name
+				tx2social = t3social
+				t2x = "H1301"
+				t2xx = "H1310"
+			Case Else
+				TrioCmd("trio:sleep 10")
+				TrioCmd("gui:error_message Not a valid selection")
+		
+		End Select
+
+		TrioCmd("page:set_property " & t2x & " " & tx1name)
+		TrioCmd("page:set_property " & t2xx & " " & tx1social)
+		TrioCmd("page:set_property " & t1x & " " & tx2name)
+		TrioCmd("page:set_property " & t1xx & " " & tx2social)
+	end if
+
+elseif t = "SL_GenImg" OR t = "SL_GenTextImg" OR t = "SL_Weather" then 
+	tab_value = TrioCmd("page:get_property A0500")
+		if tab_value = 0 then
+			TrioCmd("page:set_property A0500 2")
+		else
+			TrioCmd("page:set_property A0500 0")
+	end if
+	
+elseif left(t, 6) = "NU_Mat" OR left(t,7) = "NU_Spon" then 
+	tab_value = TrioCmd("page:get_property A0010")
+		if tab_value = 0 then
+			TrioCmd("page:set_property A0010 1")
+		elseif tab_value = 1 then
+			TrioCmd("page:set_property A0010 2")
+		else
+			TrioCmd("page:set_property A0010 0")
+	end if
+
+elseif t = "SL_SimpleScoreComp" then 
+	tab_value = TrioCmd("page:get_property A0500")
+		if tab_value = 0 then
+			TrioCmd("page:set_property A0500 1")
+		else
+			TrioCmd("page:set_property A0500 0")
+	end if
+
+elseif left(t, 6) = "NU_Sco" OR left(t, 3) = "SL_" OR left(t, 3) = "WG_" then 
+	tab_value = TrioCmd("page:get_property A0500")
+		if tab_value = 0 then
+			TrioCmd("page:set_property A0500 1")
+		else
+			TrioCmd("page:set_property A0500 0")
+	end if
+	
+elseif left(t, 3) = "NU_" then 
+	tab_value = TrioCmd("page:get_property A0200")
+		if tab_value = 0 then
+			TrioCmd("page:set_property A0200 1")
+		elseif tab_value = 1 then
+			TrioCmd("page:set_property A0200 2")
+		else
+			TrioCmd("page:set_property A0200 0")
+	end if
+
+elseif t = "L3_SplitScreen" then 
+	LeftTeam = TrioCmd("page:get_property B0000")
+	LeftFirst = TrioCmd("page:get_property H0051")
+	LeftLast = TrioCmd("page:get_property H0052")
+	
+	RightTeam = TrioCmd("page:get_property B0001")
+	RightFirst = TrioCmd("page:get_property H0061")
+	RightLast = TrioCmd("page:get_property H0062")
+	
+	TrioCmd("page:set_property B0000 " & RightTeam)
+	TrioCmd("page:set_property H0051 " & RightFirst)
+	TrioCmd("page:set_property H0052 " & RightLast)
+	
+	TrioCmd("page:set_property B0001 " & LeftTeam)
+	TrioCmd("page:set_property H0061 " & LeftFirst)
+	TrioCmd("page:set_property H0062 " & LeftLast)
+end if

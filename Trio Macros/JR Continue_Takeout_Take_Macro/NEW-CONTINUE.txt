@@ -1,0 +1,16 @@
+'JORDAN: NEW CONTINUE (KEY: {CONTINUE})
+'REGULAR CONTINUE USES STORED VALUES OF LAST PAGE SENT TO VIZ-1 OR VIZ-2 TO CONTINUE SCENE ON OUTPUT. USED FOR SCENES WITH REVEALS
+
+c_progchannel = TrioCmd("channelcontrol:get_program_channel")
+
+if c_progchannel = "VIZ-1" then
+	l_pagename = TrioCmd("show:get_variable lt_page1")
+	l_pagelayer = TrioCmd("show:get_variable lt_layer1")
+end if
+
+if c_progchannel = "VIZ-2" then
+	l_pagename = TrioCmd("show:get_variable lt_page2")
+	l_pagelayer = TrioCmd("show:get_variable lt_layer2")
+end if
+
+TrioCmd("page:continue " & l_pagename)

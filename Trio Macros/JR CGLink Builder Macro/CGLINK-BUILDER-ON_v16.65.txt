@@ -1,0 +1,1447 @@
+'JORDAN: CGLink Build IN v16.65 (12.19.25) -- KEY: {}
+'============================================================
+Option Explicit
+
+'============================================================
+' CORE HELPERS
+'============================================================
+
+Private Const SLEEP_TPL = 10
+
+Private Sub SleepTpl()
+    TrioCmd "trio:sleep " & CStr(SLEEP_TPL)
+End Sub
+
+Private Sub ReadTemplateSafe(ByVal tplName)
+    SleepTpl
+    TrioCmd "page:read_template " & tplName
+    SleepTpl
+End Sub
+
+Private Function GetProp(ByVal field)
+    GetProp = TrioCmd("page:get_property " & field)
+End Function
+
+Private Function GetPropTrim(ByVal field)
+    GetPropTrim = Trim(GetProp(field))
+End Function
+
+Private Function GetTabCust(ByVal field)
+    GetTabCust = TrioCmd("tabfield:get_custom_property " & field)
+End Function
+
+Private Sub SetProp(ByVal field, ByVal value)
+    TrioCmd "page:set_property " & field & " " & CStr(value)
+End Sub
+
+Private Function UseLastNameOnly()
+    Dim cust
+    cust = GetTabCust("H0011")
+    UseLastNameOnly = (LCase(Left(CStr(cust), 5)) = "team.")
+End Function
+
+Private Function CombineQualifiers(ByVal q1, ByVal q2)
+    Dim a, b
+    a = Trim(CStr(q1))
+    b = Trim(CStr(q2))
+    If a = "" And b = "" Then
+        CombineQualifiers = ""
+        Exit Function
+    End If
+    ' If qualifier1 is a generic daypart and qualifier2 exists, prefer qualifier2 only.
+    If (UCase(a) = "TODAY" Or UCase(a) = "TONIGHT") And b <> "" Then a = ""
+    If a <> "" And b <> "" Then
+        CombineQualifiers = a & " - " & b
+    ElseIf a <> "" Then
+        CombineQualifiers = a
+    Else
+        CombineQualifiers = b
+    End If
+End Function
+
+Private Sub ApplyJerseyPos_Player(ByVal jerseyEnabled, ByVal posEnabled, ByVal jerseyVal, ByVal posVal)
+    If jerseyEnabled = "YES" Then
+        SetProp "H0011", jerseyVal
+    Else
+        SetProp "H0011", ""
+    End If
+
+    If posEnabled = "YES" Then
+        SetProp "H0012", posVal
+    Else
+        SetProp "H0012", ""
+    End If
+End Sub
+
+'============================================================
+' MAIN
+'============================================================
+
+Dim v_JerseyEnable, v_PositionEnable, v_Start5JerPosEnable, v_Start5NameToggle, v_Tigers
+Dim a_vtwCheck, v_vtwNumber, v_WPrefresh
+Dim Name, v_pgNumber, v_ShowName, v_LeagueChk, v_League
+Dim Tacos
+Dim a_Stat5chk, a_footerCheck, v_stat2line, v_Stat5chk
+Dim v_CGtype
+Dim v_secondaryNote, v_footerNote, v_compStatChk
+Dim v_PlyrTeam, v_PlyrStatCat, v_PlyrNameF, v_PlyrNameL, v_PlyrName
+Dim v_PlyrJersey, v_PlyrPos
+Dim v_Stat1, v_Stat2, v_Stat3, v_Stat4, v_Stat5, v_Stat6
+Dim v_Cat1, v_Cat2, v_Cat3, v_Cat4, v_Cat5, v_Cat6
+Dim v_Qual, v_Qual2
+Dim v_Foot, v_FootCheck, a_NoteCheck, v_Note
+Dim v_PlyrTeam1, v_PlyrTeam2
+Dim v_NameType
+Dim v_PlyrNameF1, v_PlyrNameF2, v_PlyrNameF3, v_PlyrNameF4, v_PlyrNameF5
+Dim v_PlyrIname1, v_PlyrIname2, v_PlyrIname3, v_PlyrIname4, v_PlyrIname5
+Dim v_PlyrNameL1, v_PlyrNameL2, v_PlyrNameL3, v_PlyrNameL4, v_PlyrNameL5
+Dim v_PlyrName1, v_PlyrName2, v_PlyrName3, v_PlyrName4, v_PlyrName5
+Dim v_PlyrJersey1, v_PlyrJersey2, v_PlyrJersey3, v_PlyrJersey4, v_PlyrJersey5
+Dim v_PlyrPos1, v_PlyrPos2, v_PlyrPos3, v_PlyrPos4, v_PlyrPos5
+Dim v_Cat1Split
+Dim nv_Nickname1, nv_Nickname2
+Dim data_Note
+Dim c_pagename, c_lenpagename, c_leftpagename, c_rightpagename, c_midpagename
+Dim a_lastABnum, a_nextABnum, a_lastABmid
+Dim h_lastABnum, h_nextABnum, h_lastABmid
+Dim v_LeagueX
+
+v_JerseyEnable = "NO"
+v_PositionEnable = "NO"
+v_Start5JerPosEnable = "YES"
+v_Start5NameToggle = "FULL" '(LAST = Lastname | INITIAL = Initial. Lastname | FULL = Fullname
+v_Tigers = "NO"
+a_vtwCheck = TrioCmd("vtwtemplate:get_template")
+Call m_vtwVersion(v_vtwNumber,v_WPrefresh)
+TrioCmd("vtwtemplate:run_vtw_script clear_fields")
+    SleepTpl
+Name = TrioCmd("page:getpagetemplate")
+v_pgNumber = TrioCmd("page:getpagename")
+v_ShowName = TrioCmd("show:get_show_name")
+v_LeagueChk = GetProp("A0100")
+Select Case Name
+	Case "FS_Strt5NBA"
+		if v_Start5JerPosEnable = "YES" then
+			v_JerseyEnable = "YES"
+			v_PositionEnable = "YES"
+		else
+			v_JerseyEnable = "NO"
+			v_PositionEnable = "NO"
+		end if
+	Case Else
+		Tacos = "GOOD"
+End Select
+
+if v_LeagueChk = "" then
+	v_League = inputbox("Tabfield (A0100) League is empty" & vbCrlf & vbCrlf & "Enter League:" & vbCrlf & "Example:   NHL","CGLINK BUILD - LEAGUE","")
+    SetProp "A0100", UCase(v_League)
+else
+	v_League = v_LeagueChk
+end if	
+
+Select Case Name
+	Case "L3_TeamPlyrStat"
+		a_Stat5chk = GetProp("H0501")
+		a_footerCheck = GetProp("Z0900")
+		if a_footerCheck = "" then
+			v_stat2line = "NO"
+		else
+			v_stat2line = "YES"
+		end if
+		
+		if Len(a_Stat5chk) > 0 then
+			v_Stat5chk = "YES"
+		else
+			v_Stat5chk = "NO"
+		end if
+		
+		if (v_League = "MLB") and v_Tigers = "YES" then
+			if (v_pgNumber > 6300 and v_pgNumber < 6310) then
+				v_CGtype = "L3MLB_S"
+			elseif (v_pgNumber > 6400 and v_pgNumber < 6410) then
+				v_CGtype = "L3MLB_S"
+			elseif v_Stat5chk = "YES" then
+				v_CGtype = "L3MLB_S"
+			else
+				v_CGtype = "L3"
+			end if
+		elseif v_stat2line = "YES" then
+			v_CGtype = "L3STAT2LINE"
+		else
+			if v_Stat5chk = "YES" and v_stat2line = "NO" then
+				v_CGtype = "L3MLB_S"
+			elseif v_Stat5chk = "YES" and v_stat2line = "YES" then
+				v_CGtype = "L3STAT2LINE"
+			elseif v_Stat5chk = "NO" and v_stat2line = "YES" then
+				v_CGtype = "L3STAT2LINE"
+			else
+				v_CGtype = "L3"
+			end if
+		end if
+	Case "L3_Plyr0Fer"
+		v_CGtype = "L3_0for"
+	Case "L3_Plyr0Fer_Avg"
+		v_CGtype = "L3_0forAvg"
+	Case "L3_PlyrNote"
+		v_secondaryNote = GetProp("H0200")
+		v_footerNote = GetProp("Z0900")
+		if (v_League = "MLB") and v_Tigers = "YES" then
+			if (v_pgNumber > 499 and v_pgNumber < 700) then
+				v_CGtype = "L3MLB"
+			elseif Len(v_secondaryNote) > 0 then
+				v_CGtype = "L3N2"
+			elseif Len(v_footerNote) > 0 then
+				v_CGtype = "L3N2"
+			else
+				v_CGtype = "L3N"
+			end if
+		else
+			if Len(v_secondaryNote) > 0 then
+				v_CGtype = "L3N2"
+			elseif Len(v_footerNote) > 0 then
+				v_CGtype = "L3N2"
+			else
+				v_CGtype = "L3N"
+			end if
+		end if
+	Case "L3_TeamComp"
+		v_compStatChk = GetProp("H0050")
+		Select Case v_compStatChk
+			Case "1"
+				v_CGtype = "L3COMP"
+			Case "2"
+				v_CGtype = "L3COMP2"
+			Case "3","4","5"
+				v_CGtype = "L3COMP3"
+		End Select
+	Case "SL_PlyrComparison"
+		v_compStatChk = GetProp("C0000")
+		Select Case v_compStatChk
+			Case "1"
+				v_CGtype = "SLCOMP"
+			Case "2"
+				v_CGtype = "SLCOMP2"
+			Case "3","4","5"
+				v_CGtype = "SLCOMP3"
+		End Select
+	Case "NU_WinProb"
+		v_CGtype = "L3COMP_WP"
+	Case "SL_PlyrStats"
+		v_CGtype = "SL"
+	Case "SL_PlyrStats10","SL_LeagueStat"
+		v_CGtype = "SL10"
+	Case "FS_Strt5NBA"
+		v_CGtype = "Start5"
+	Case "CG_Ticker_TeamStats","CG_Ticker_PlayerStats","CG_Ticker_TeamComp","CG_Ticker_2TeamNote","CG_Ticker_PlyrComp2Stat","CG_Ticker_PlyrComp3Stat","CG_Ticker_Matchup","CG_Ticker_StartingFive","CG_Ticker_2LineNote","CG_Ticker_NextBatter","CG_Ticker_Lineup","CG_Ticker_Next3Batters","CG_Ticker_StatComp"
+		v_CGtype = "CG"
+	Case else
+		if Left(Name, 9) = "CG_Ticker" then
+			v_CGtype = "CG"
+		else
+			v_CGtype = "XX"
+		end if
+End Select		
+
+if v_CGtype = "L3" then
+	v_PlyrTeam = GetProp("B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_PlyrStatCat = GetProp("H0005")
+	v_PlyrNameF = GetProp("H0010")
+	v_PlyrNameL = GetProp("H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = GetProp("H0031")
+	v_PlyrPos = GetProp("H0041")
+	v_Stat1 = GetProp("H0101")
+	v_Stat2 = GetProp("H0201")
+	v_Stat3 = GetProp("H0301")
+	v_Stat4 = GetProp("H0401")
+	v_Cat1 = GetProp("H0100")
+	v_Cat2 = GetProp("H0200")
+	v_Cat3 = GetProp("H0300")
+	v_Cat4 = GetProp("H0400")
+	v_Qual = GetProp("B0200")
+    If UseLastNameOnly() Then
+        v_PlyrName = v_PlyrNameL
+    End If
+    ReadTemplateSafe "CG_Ticker_PlayerStats"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", v_PlyrStatCat
+    SetProp "H0010", v_PlyrName
+    SetProp "H0101", v_Stat1
+    SetProp "H0201", v_Stat2
+    SetProp "H0301", v_Stat3
+    SetProp "H0401", v_Stat4
+    SetProp "H0100", v_Cat1
+    SetProp "H0200", v_Cat2
+    SetProp "H0300", v_Cat3
+    SetProp "H0400", v_Cat4
+    SetProp "B0300", v_Qual
+	if v_JerseyEnable = "YES" then
+    SetProp "H0011", v_PlyrJersey
+	else
+    SetProp "H0011", ""
+	end if
+	
+	if v_PositionEnable = "YES" then
+    SetProp "H0012", v_PlyrPos
+	else
+    SetProp "H0012", ""
+	end if
+
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3MLB_S" then
+	v_PlyrTeam = GetProp("B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_PlyrStatCat = GetProp("H0005")
+	v_PlyrNameF = GetProp("H0010")
+	v_PlyrNameL = GetProp("H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = GetProp("H0031")
+	v_PlyrPos = GetProp("H0041")
+	v_Stat1 = GetProp("H0101")
+	v_Stat2 = GetProp("H0201")
+	v_Stat3 = GetProp("H0301")
+	v_Stat4 = GetProp("H0401")
+	v_Stat5 = GetProp("H0501")
+	v_Stat6 = GetProp("H0601")
+	v_Cat1 = GetProp("H0100")
+	v_Cat2 = GetProp("H0200")
+	v_Cat3 = GetProp("H0300")
+	v_Cat4 = GetProp("H0400")
+	v_Cat5 = GetProp("H0500")
+	v_Cat6 = GetProp("H0600")
+	v_Qual = GetProp("B0200")
+	v_Foot = GetProp("Z0900")
+	a_NoteCheck = v_Stat1 & " " & LCase(v_Cat1) & "     " & v_Stat2 & " " & LCase(v_Cat2) & "     " & v_Stat3 & " " & LCase(v_Cat3) & "     " & v_Stat4 & " " & LCase(v_Cat4) & "     " & v_Stat5 & " " & LCase(v_Cat5) & "     " & v_Stat6 & " " & LCase(v_Cat6)
+	v_Note = Replace(a_NoteCheck, ",  ", "")
+	v_Note = Trim(v_Note)
+	If Len(Trim(v_Foot)) > 0 Then
+	    v_FootCheck = "YES"
+	Else
+	    v_FootCheck = "NO"
+	End If
+    If UseLastNameOnly() Then
+        v_PlyrName = v_PlyrNameL
+    End If
+if v_FootCheck = "YES" then
+    ReadTemplateSafe "CG_Ticker_2LineNote"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0010", v_PlyrName
+    SetProp "H0110", v_Note
+    SetProp "H0120", v_Foot
+    SetProp "B0300", v_Qual
+	else
+    ReadTemplateSafe "CG_Ticker_PlayerStats"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", v_PlyrStatCat
+    SetProp "H0010", v_PlyrName
+    SetProp "H0101", v_Note
+    SetProp "H0201", ""
+    SetProp "H0301", ""
+    SetProp "H0401", ""
+    SetProp "H0100", ""
+    SetProp "H0200", ""
+    SetProp "H0300", ""
+    SetProp "H0400", ""
+    SetProp "B0300", v_Qual
+		if v_JerseyEnable = "YES" then
+    SetProp "H0011", v_PlyrJersey
+		else
+    SetProp "H0011", ""
+		end if
+		
+		if v_PositionEnable = "YES" then
+    SetProp "H0012", v_PlyrPos
+		else
+    SetProp "H0012", ""
+		end if
+	end if
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3STAT2LINE" then
+	v_PlyrTeam = GetProp("B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_PlyrStatCat = GetProp("H0005")
+	v_PlyrNameF = GetProp("H0010")
+	v_PlyrNameL = GetProp("H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = GetProp("H0031")
+	v_PlyrPos = GetProp("H0041")
+	v_Stat1 = GetProp("H0101")
+	v_Stat2 = GetProp("H0201")
+	v_Stat3 = GetProp("H0301")
+	v_Stat4 = GetProp("H0401")
+	v_Stat5 = GetProp("H0501")
+	v_Stat6 = GetProp("H0601")
+	v_Cat1 = GetProp("H0100")
+	v_Cat2 = GetProp("H0200")
+	v_Cat3 = GetProp("H0300")
+	v_Cat4 = GetProp("H0400")
+	v_Cat5 = GetProp("H0500")
+	v_Cat6 = GetProp("H0600")
+	v_Qual = GetProp("B0200")
+	v_Foot = GetProp("Z0900")
+	a_NoteCheck = v_Stat1 & " " & LCase(v_Cat1) & "     " & v_Stat2 & " " & LCase(v_Cat2) & "     " & v_Stat3 & " " & LCase(v_Cat3) & "     " & v_Stat4 & " " & LCase(v_Cat4) & "     " & v_Stat5 & " " & LCase(v_Cat5) & "     " & v_Stat6 & " " & LCase(v_Cat6)
+	v_Note = Replace(a_NoteCheck, ",  ", "")
+	v_Note = Trim(v_Note)
+	If Len(Trim(v_Foot)) > 0 Then
+		v_FootCheck = "YES"
+	Else
+		v_FootCheck = "NO"
+	End If
+    If UseLastNameOnly() Then
+        v_PlyrName = v_PlyrNameL
+    End If
+if v_FootCheck = "YES" then
+    ReadTemplateSafe "CG_Ticker_2LineNote"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0010", v_PlyrName
+    SetProp "H0110", v_Note
+    SetProp "H0120", v_Foot
+    SetProp "B0300", v_Qual
+	else
+    ReadTemplateSafe "CG_Ticker_PlayerStats"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", v_PlyrStatCat
+    SetProp "H0010", v_PlyrName
+    SetProp "H0101", v_Note
+    SetProp "H0201", ""
+    SetProp "H0301", ""
+    SetProp "H0401", ""
+    SetProp "H0100", ""
+    SetProp "H0200", ""
+    SetProp "H0300", ""
+    SetProp "H0400", ""
+    SetProp "B0300", v_Qual
+		if v_JerseyEnable = "YES" then
+    SetProp "H0011", v_PlyrJersey
+		else
+    SetProp "H0011", ""
+		end if
+		
+		if v_PositionEnable = "YES" then
+    SetProp "H0012", v_PlyrPos
+		else
+    SetProp "H0012", ""
+		end if
+	end if
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3MLB" then	
+	v_PlyrTeam = GetProp("B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_PlyrStatCat = GetProp("H0005")
+	v_PlyrNameF = GetProp("H0010")
+	v_PlyrNameL = GetProp("H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = GetProp("H0031")
+	v_PlyrPos = GetProp("H0041")
+	v_Cat1 = GetProp("H0100")
+	v_Cat2 = GetProp("H0200")
+	v_Foot = GetProp("Z0900")
+	v_Qual = GetProp("B0200")
+    If UseLastNameOnly() Then
+        v_PlyrName = v_PlyrNameL
+    End If
+    ReadTemplateSafe "CG_Ticker_PlayerStats"
+	if (v_pgNumber > 499 and v_pgNumber < 510) or (v_pgNumber > 599 and v_pgNumber < 610) then
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", "1"
+    SetProp "H0010", v_PlyrPos & "  [" & v_PlyrName & "]"
+    SetProp "H0101", s_Foot2(0) & " " & s_Foot2(1)
+    SetProp "H0201", s_Foot3(0)
+    SetProp "H0301", s_Foot4(0)
+    SetProp "H0401", ""
+    SetProp "H0100", ""
+    SetProp "H0200", s_Foot3(1)
+    SetProp "H0300", s_Foot4(1)
+    SetProp "H0400", ""
+    SetProp "B0300", s_Foot1
+	elseif (v_pgNumber > 509 and v_pgNumber < 520) or (v_pgNumber > 549 and v_pgNumber < 560) or (v_pgNumber > 589 and v_pgNumber < 600) or (v_pgNumber > 609 and v_pgNumber < 620) or (v_pgNumber > 649 and v_pgNumber < 660) or (v_pgNumber > 689 and v_pgNumber < 700) then
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", "1"
+    SetProp "H0010", v_PlyrPos & "  [" & v_PlyrName & "]"
+    SetProp "H0101", s_Foot2(0)
+    SetProp "H0201", s_Foot3(0)
+    SetProp "H0301", s_Foot4(0)
+    SetProp "H0401", ""
+    SetProp "H0100", s_Foot2(1)
+    SetProp "H0200", s_Foot3(1)
+    SetProp "H0300", s_Foot4(1)
+    SetProp "H0400", ""
+    SetProp "B0300", s_Foot1
+	elseif (v_pgNumber > 539 and v_pgNumber < 550) or (v_pgNumber > 639 and v_pgNumber < 650) then
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", "0"
+    SetProp "H0010", v_PlyrPos & "  [" & v_PlyrNameL & "]"
+    SetProp "H0101", s_Foot2(0) & " " & s_Foot2(1) & " " & s_Foot2(2)
+    SetProp "H0201", s_Foot4(0) & " " & s_Foot4(1)
+    SetProp "H0301", ""
+    SetProp "H0401", ""
+    SetProp "H0100", s_Foot1 & ":"
+    SetProp "H0200", s_Foot3(0) & ":"
+    SetProp "H0300", ""
+    SetProp "H0400", ""
+    SetProp "B0300", ""
+	elseif (v_pgNumber > 559 and v_pgNumber < 570) or (v_pgNumber > 659 and v_pgNumber < 670) then
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", "1"
+    SetProp "H0010", v_PlyrPos & "  [" & v_PlyrName & "]"
+    SetProp "H0101", s_Foot2(0) & " " & s_Foot2(1) & " " & s_Foot2(2) & " " & s_Foot2(3)
+    SetProp "H0201", ""
+    SetProp "H0301", ""
+    SetProp "H0401", ""
+    SetProp "H0100", ""
+    SetProp "H0200", ""
+    SetProp "H0300", ""
+    SetProp "H0400", ""
+    SetProp "B0300", s_Foot1
+	elseif (v_pgNumber > 569 and v_pgNumber < 580) or (v_pgNumber > 669 and v_pgNumber < 680) then
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", "1"
+    SetProp "H0010", v_PlyrPos & "  [" & v_PlyrName & "]"
+    SetProp "H0101", s_Foot2(0)
+    SetProp "H0201", s_Foot3(0)
+    SetProp "H0301", s_Foot4(0)
+    SetProp "H0401", s_Foot5(0)
+    SetProp "H0100", s_Foot2(1)
+    SetProp "H0200", s_Foot3(1)
+    SetProp "H0300", s_Foot4(1)
+    SetProp "H0400", s_Foot5(1)
+    SetProp "B0300", s_Foot1
+	elseif (v_pgNumber > 579 and v_pgNumber < 590) or (v_pgNumber > 679 and v_pgNumber < 690) then
+		v_Cat1Split = split(v_Cat1, "  ")
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", "0"
+    SetProp "H0010", v_PlyrPos & "  [" & v_PlyrName & "]"
+    SetProp "H0101", v_Cat1Split(1)
+    SetProp "H0201", ""
+    SetProp "H0301", ""
+    SetProp "H0401", ""
+    SetProp "H0100", "FIRST PA:"
+    SetProp "H0200", "NO OFFICIAL AB:"
+    SetProp "H0300", ""
+    SetProp "H0400", ""
+    SetProp "B0300", v_Qual
+	else
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", "1"
+    SetProp "H0010", v_PlyrPos & "  [" & v_PlyrName & "]"
+    SetProp "H0101", v_Cat1
+    SetProp "H0201", ""
+    SetProp "H0301", ""
+    SetProp "H0401", ""
+    SetProp "H0100", v_Cat2
+    SetProp "H0200", ""
+    SetProp "H0300", ""
+    SetProp "H0400", ""
+    SetProp "B0300", v_Qual
+	end if
+	
+	if v_JerseyEnable = "YES" then
+    SetProp "H0011", v_PlyrJersey
+	else
+    SetProp "H0011", ""
+	end if
+	
+	if v_PositionEnable = "YES" then
+    SetProp "H0012", v_PlyrPos
+	else
+    SetProp "H0012", ""
+	end if
+
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3_0for" then
+	v_PlyrTeam = GetProp("B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_PlyrStatCat = "1"
+	v_PlyrNameF = GetProp("H0010")
+	v_PlyrNameL = GetProp("H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = GetProp("H0031")
+	v_PlyrPos = GetProp("H0041")
+	v_Stat1 = GetProp("H0101")
+	v_Stat2 = GetProp("H0201")
+	v_Cat1 = GetProp("H0054")
+	v_Qual = GetProp("G0050")
+    If UseLastNameOnly() Then
+        v_PlyrName = v_PlyrNameL
+    End If
+    ReadTemplateSafe "CG_Ticker_PlayerStats"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", v_PlyrStatCat
+    SetProp "H0010", v_PlyrName
+    SetProp "H0101", v_Stat1 & " for " & v_Stat2
+    SetProp "H0201", ""
+    SetProp "H0301", ""
+    SetProp "H0401", ""
+    SetProp "H0100", v_Cat1
+    SetProp "H0200", ""
+    SetProp "H0300", ""
+    SetProp "H0400", ""
+    SetProp "B0300", v_Qual
+	if v_JerseyEnable = "YES" then
+    SetProp "H0011", v_PlyrJersey
+	else
+    SetProp "H0011", ""
+	end if
+	
+	if v_PositionEnable = "YES" then
+    SetProp "H0012", v_PlyrPos
+	else
+    SetProp "H0012", ""
+	end if
+
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3_0forAvg" then
+	v_PlyrTeam = GetProp("B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_PlyrStatCat = "0"
+	v_PlyrNameF = GetProp("H0010")
+	v_PlyrNameL = GetProp("H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = GetProp("H0031")
+	v_PlyrPos = GetProp("H0041")
+	v_Stat1 = GetProp("H0101")
+	v_Stat2 = GetProp("H0201")
+	v_Stat3 = GetProp("H0301")
+	v_Stat4 = GetProp("H0401")
+	v_Stat5 = GetProp("H0601")
+	v_Cat1 = GetProp("H0501")
+	v_Cat2 = GetProp("H0701")
+	v_Qual = GetProp("G0050")
+    If UseLastNameOnly() Then
+        v_PlyrName = v_PlyrNameL
+    End If
+    ReadTemplateSafe "CG_Ticker_PlayerStats"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", v_PlyrStatCat
+    SetProp "H0010", v_PlyrName
+    SetProp "H0101", v_Stat1
+    SetProp "H0201", v_Stat2 & " for " & v_Stat3
+    SetProp "H0301", v_Stat4
+    SetProp "H0401", v_Stat5
+    SetProp "H0100", ""
+    SetProp "H0200", ""
+    SetProp "H0300", v_Cat1
+    SetProp "H0400", v_Cat2
+    SetProp "B0300", v_Qual
+	if v_JerseyEnable = "YES" then
+    SetProp "H0011", v_PlyrJersey
+	else
+    SetProp "H0011", ""
+	end if
+	
+	if v_PositionEnable = "YES" then
+    SetProp "H0012", v_PlyrPos
+	else
+    SetProp "H0012", ""
+	end if
+
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3COMP" then
+	v_PlyrTeam1 = GetProp("B0000")
+	v_PlyrTeam1 = Trim(v_PlyrTeam1)
+	v_PlyrTeam2 = GetProp("B0001")
+	v_PlyrTeam2 = Trim(v_PlyrTeam2)
+	v_PlyrName1 = GetProp("H0100")
+	v_PlyrName2 = GetProp("H0200")
+	v_Stat1 = GetProp("H0110")
+	v_Stat2 = GetProp("H0210")
+	v_Qual = GetProp("H0010")
+	v_Qual2 = GetProp("H0011")
+    v_Qual = CombineQualifiers(v_Qual, v_Qual2)
+    ReadTemplateSafe "CG_Ticker_StatComp"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam1
+    SetProp "B0001", v_PlyrTeam2
+	'TrioCmd("page:set_property H0010 " & v_PlyrName1)
+	'TrioCmd("page:set_property H0020 " & v_PlyrName2)
+    SetProp "H0105", v_Stat1
+    SetProp "H0205", v_Stat2
+    SetProp "H0300", v_Qual
+    SetProp "B0300", ""
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3COMP2" then
+	v_PlyrTeam1 = GetProp("B0000")
+	v_PlyrTeam1 = Trim(v_PlyrTeam1)
+	v_PlyrTeam2 = GetProp("B0001")
+	v_PlyrTeam2 = Trim(v_PlyrTeam2)
+	v_PlyrName1 = GetProp("H0100")
+	v_PlyrName2 = GetProp("H0200")
+	v_Cat1 = GetProp("H0011")
+	v_Cat2 = GetProp("H0012")
+	v_Stat1 = GetProp("H0110")
+	v_Stat2 = GetProp("H0120")
+	v_Stat3 = GetProp("H0210")
+	v_Stat4 = GetProp("H0220")
+	v_Qual = GetProp("H0010")
+    ReadTemplateSafe "CG_Ticker_PlyrComp2Stat"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam1
+    SetProp "B0001", v_PlyrTeam2
+    SetProp "H0105", v_PlyrName1
+    SetProp "H0205", v_PlyrName2
+    SetProp "H0116", v_Cat1
+    SetProp "H0216", v_Cat1
+    SetProp "H0126", v_Cat2
+    SetProp "H0226", v_Cat2
+    SetProp "H0110", v_Stat1
+    SetProp "H0120", v_Stat2
+    SetProp "H0210", v_Stat3
+    SetProp "H0220", v_Stat4
+    SetProp "B0300", v_Qual
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3COMP3" then
+	v_PlyrTeam1 = GetProp("B0000")
+	v_PlyrTeam1 = Trim(v_PlyrTeam1)
+	v_PlyrTeam2 = GetProp("B0001")
+	v_PlyrTeam2 = Trim(v_PlyrTeam2)
+	v_PlyrName1 = GetProp("H0100")
+	v_PlyrName2 = GetProp("H0200")
+	v_Cat1 = GetProp("H0011")
+	v_Cat2 = GetProp("H0012")
+	v_Cat3 = GetProp("H0013")
+	v_Stat1 = GetProp("H0110")
+	v_Stat2 = GetProp("H0120")
+	v_Stat3 = GetProp("H0130")
+	v_Stat4 = GetProp("H0210")
+	v_Stat5 = GetProp("H0220")
+	v_Stat6 = GetProp("H0230")
+	v_Qual = GetProp("H0010")
+    ReadTemplateSafe "CG_Ticker_PlyrComp3Stat"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam1
+    SetProp "B0001", v_PlyrTeam2
+    SetProp "H0105", v_PlyrName1
+    SetProp "H0205", v_PlyrName2
+    SetProp "H0116", v_Cat1
+    SetProp "H0216", v_Cat1
+    SetProp "H0126", v_Cat2
+    SetProp "H0226", v_Cat2
+    SetProp "H0136", v_Cat3
+    SetProp "H0236", v_Cat3
+    SetProp "H0110", v_Stat1
+    SetProp "H0120", v_Stat2
+    SetProp "H0130", v_Stat3
+    SetProp "H0210", v_Stat4
+    SetProp "H0220", v_Stat5
+    SetProp "H0230", v_Stat6
+    SetProp "B0300", v_Qual
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "SLCOMP" then
+	v_League = GetProp("A0100")
+	v_PlyrTeam1 = GetProp("B0001")
+	v_PlyrTeam1 = Trim(v_PlyrTeam1)
+	v_PlyrTeam2 = GetProp("B0002")
+	v_PlyrTeam2 = Trim(v_PlyrTeam2)
+	v_PlyrName1 = GetProp("H0011")
+	v_PlyrName2 = GetProp("J0021")
+	if v_PlyrName1 = "" then
+		nv_Nickname1 = GetTeamNickname(GetProp("A0100"), v_PlyrTeam1)
+	v_PlyrName1 = nv_Nickname1
+	else
+		v_PlyrName1 = v_PlyrName1
+	end if
+	
+	if v_PlyrName2 = "" then
+		nv_Nickname2 = GetTeamNickname(GetProp("A0100"), v_PlyrTeam2)
+	v_PlyrName2 = nv_Nickname2
+	else
+		v_PlyrName2 = v_PlyrName2
+	end if
+	
+	v_Stat1 = GetProp("H1010")
+	v_Stat2 = GetProp("J1010")
+	v_Qual = GetProp("G1010")
+    ReadTemplateSafe "CG_Ticker_TeamComp"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam1
+    SetProp "B0001", v_PlyrTeam2
+    SetProp "H0010", v_PlyrName1
+    SetProp "H0020", v_PlyrName2
+    SetProp "H0015", v_Stat1
+    SetProp "H0025", v_Stat2
+    SetProp "B0300", v_Qual
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "SLCOMP2" then
+	v_League = GetProp("A0100")
+	v_PlyrTeam1 = GetProp("B0001")
+	v_PlyrTeam1 = Trim(v_PlyrTeam1)
+	v_PlyrTeam2 = GetProp("B0002")
+	v_PlyrTeam2 = Trim(v_PlyrTeam2)
+	v_PlyrName1 = GetProp("H0011")
+	v_PlyrName2 = GetProp("J0021")
+	if v_PlyrName1 = "" then
+		nv_Nickname1 = GetTeamNickname(GetProp("A0100"), v_PlyrTeam1)
+	v_PlyrName1 = nv_Nickname1
+	else
+		v_PlyrName1 = v_PlyrName1
+	end if
+	
+	if v_PlyrName2 = "" then
+		nv_Nickname2 = GetTeamNickname(GetProp("A0100"), v_PlyrTeam2)
+	v_PlyrName2 = nv_Nickname2
+	else
+		v_PlyrName2 = v_PlyrName2
+	end if
+	
+	v_Cat1 = GetProp("G1010")
+	v_Cat2 = GetProp("G1020")
+	v_Stat1 = GetProp("H1010")
+	v_Stat2 = GetProp("H1020")
+	v_Stat3 = GetProp("J1010")
+	v_Stat4 = GetProp("J1020")
+	v_Qual = GetProp("B0110")
+    ReadTemplateSafe "CG_Ticker_PlyrComp2Stat"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam1
+    SetProp "B0001", v_PlyrTeam2
+    SetProp "H0105", v_PlyrName1
+    SetProp "H0205", v_PlyrName2
+    SetProp "H0116", v_Cat1
+    SetProp "H0216", v_Cat1
+    SetProp "H0126", v_Cat2
+    SetProp "H0226", v_Cat2
+    SetProp "H0110", v_Stat1
+    SetProp "H0120", v_Stat2
+    SetProp "H0210", v_Stat3
+    SetProp "H0220", v_Stat4
+    SetProp "B0300", v_Qual
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "SLCOMP3" then
+	v_League = GetProp("A0100")
+	v_PlyrTeam1 = GetProp("B0001")
+	v_PlyrTeam1 = Trim(v_PlyrTeam1)
+	v_PlyrTeam2 = GetProp("B0002")
+	v_PlyrTeam2 = Trim(v_PlyrTeam2)
+	v_PlyrName1 = GetProp("H0011")
+	v_PlyrName2 = GetProp("J0021")
+	if v_PlyrName1 = "" then
+		nv_Nickname1 = GetTeamNickname(GetProp("A0100"), v_PlyrTeam1)
+	v_PlyrName1 = nv_Nickname1
+	else
+		v_PlyrName1 = v_PlyrName1
+	end if
+	
+	if v_PlyrName2 = "" then
+		nv_Nickname2 = GetTeamNickname(GetProp("A0100"), v_PlyrTeam2)
+	v_PlyrName2 = nv_Nickname2
+	else
+		v_PlyrName2 = v_PlyrName2
+	end if
+	
+	v_Cat1 = GetProp("G1010")
+	v_Cat2 = GetProp("G1020")
+	v_Cat3 = GetProp("G1030")
+	v_Stat1 = GetProp("H1010")
+	v_Stat2 = GetProp("H1020")
+	v_Stat3 = GetProp("H1030")
+	v_Stat4 = GetProp("J1010")
+	v_Stat5 = GetProp("J1020")
+	v_Stat6 = GetProp("J1030")
+	v_Qual = GetProp("B0110")
+    ReadTemplateSafe "CG_Ticker_PlyrComp3Stat"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam1
+    SetProp "B0001", v_PlyrTeam2
+    SetProp "H0105", v_PlyrName1
+    SetProp "H0205", v_PlyrName2
+    SetProp "H0116", v_Cat1
+    SetProp "H0216", v_Cat1
+    SetProp "H0126", v_Cat2
+    SetProp "H0226", v_Cat2
+    SetProp "H0136", v_Cat3
+    SetProp "H0236", v_Cat3
+    SetProp "H0110", v_Stat1
+    SetProp "H0120", v_Stat2
+    SetProp "H0130", v_Stat3
+    SetProp "H0210", v_Stat4
+    SetProp "H0220", v_Stat5
+    SetProp "H0230", v_Stat6
+    SetProp "B0300", v_Qual
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3COMP_WP" then
+	if v_WPrefresh = "YES" then
+		TrioCmd("vtwtemplate:invoke_function get_wp_data Nubb")
+	else
+		data_Note = "VTW Version does not have FS Win Prob"
+	end if
+	TrioCmd("vtwtemplate:invoke_function get_wp_data Nubb")
+	TrioCmd("trio:sleep 50")
+	
+	v_League = GetProp("A0100")
+	v_PlyrTeam1 = GetProp("B0000")
+	v_PlyrTeam1 = Trim(v_PlyrTeam1)
+	
+	if v_PlyrTeam1 = "CWS" then
+		v_PlyrTeam1 = "CHW"
+	end if
+	
+	nv_Nickname1 = GetTeamNickname(GetProp("A0100"), v_PlyrTeam1)
+	v_PlyrName1 = nv_Nickname1
+	v_PlyrTeam2 = GetProp("B0001")
+	v_PlyrTeam2 = Trim(v_PlyrTeam2)
+	
+	if v_PlyrTeam2 = "CWS" then
+		v_PlyrTeam2 = "CHW"
+	end if
+	
+	nv_Nickname2 = GetTeamNickname(GetProp("A0100"), v_PlyrTeam2)
+	v_PlyrName2 = nv_Nickname2
+	v_Stat1 = GetProp("H0054")
+	v_Stat1 = replace(v_Stat1, "%", "")
+	v_Stat1 = CDbl(v_Stat1)
+	v_Stat1 = Round(v_Stat1, 1)
+	if InStr(v_Stat1, ".") < 1 then
+		v_Stat1 = v_Stat1 & ".0"
+	end if
+	v_Stat1 = v_Stat1 & "%"
+	v_Stat2 = GetProp("H0064")
+	v_Stat2 = replace(v_Stat2, "%", "")
+	v_Stat2 = CDbl(v_Stat2)
+	v_Stat2 = Round(v_Stat2, 1)
+	if InStr(v_Stat2, ".") < 1 then
+		v_Stat2 = v_Stat2 & ".0"
+	end if
+	v_Stat2 = v_Stat2 & "%"
+	v_Qual = GetProp("B0200")
+    ReadTemplateSafe "CG_Ticker_StatComp"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam1
+    SetProp "B0001", v_PlyrTeam2
+	'TrioCmd("page:set_property H0010 " & v_PlyrName1)
+	'TrioCmd("page:set_property H0020 " & v_PlyrName2)
+    SetProp "H0105", v_Stat1
+    SetProp "H0205", v_Stat2
+    SetProp "H0300", v_Qual
+    SetProp "B0300", ""
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3N" then
+	v_PlyrTeam = GetProp("B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_PlyrStatCat = GetProp("H0005")
+	v_PlyrNameF = GetProp("H0010")
+	v_PlyrNameL = GetProp("H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = GetProp("H0031")
+	v_PlyrPos = GetProp("H0041")
+	v_Cat1 = GetProp("H0100")
+	v_Qual = GetProp("B0200")
+    If UseLastNameOnly() Then
+        v_PlyrName = v_PlyrNameL
+    End If
+    ReadTemplateSafe "CG_Ticker_PlayerStats"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", v_PlyrStatCat
+    SetProp "H0010", v_PlyrName
+    SetProp "H0101", v_Cat1
+    SetProp "H0201", ""
+    SetProp "H0301", ""
+    SetProp "H0401", ""
+    SetProp "H0100", ""
+    SetProp "H0200", ""
+    SetProp "H0300", ""
+    SetProp "H0400", ""
+    SetProp "B0300", v_Qual
+	if v_JerseyEnable = "YES" then
+    SetProp "H0011", v_PlyrJersey
+	else
+    SetProp "H0011", ""
+	end if
+	
+	if v_PositionEnable = "YES" then
+    SetProp "H0012", v_PlyrPos
+	else
+    SetProp "H0012", ""
+	end if
+	
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "L3N2" then
+	v_PlyrTeam = GetProp("B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_PlyrNameF = GetProp("H0010")
+	v_PlyrNameL = GetProp("H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_Cat1 = GetProp("H0100")
+	v_Cat2 = GetProp("H0200")
+	v_Foot = GetProp("Z0900")
+	v_Qual = GetProp("B0200")
+    If UseLastNameOnly() Then
+        v_PlyrName = v_PlyrNameL
+    End If
+    ReadTemplateSafe "CG_Ticker_2LineNote"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0010", v_PlyrName
+    SetProp "H0110", v_Cat1
+    SetProp "H0120", v_Cat2
+    SetProp "B0300", v_Qual
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "SL" then
+	v_PlyrTeam = GetProp("B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	'v_PlyrStatCat = TrioCmd("page:get_property H0005")
+	v_PlyrNameF = GetProp("H0010")
+	v_PlyrNameL = GetProp("H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = GetProp("H0031")
+	v_PlyrPos = GetProp("H0041")
+	v_Stat1 = GetProp("H1110")
+	v_Stat2 = GetProp("H1210")
+	v_Stat3 = GetProp("H1310")
+	v_Stat4 = GetProp("H1410")
+	v_Cat1 = GetProp("H1101")
+	v_Cat2 = GetProp("H1201")
+	v_Cat3 = GetProp("H1301")
+	v_Cat4 = GetProp("H1401")
+	v_Qual = GetProp("B0210")
+    If UseLastNameOnly() Then
+        v_PlyrName = v_PlyrNameL
+    End If
+    ReadTemplateSafe "CG_Ticker_PlayerStats"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", "1"
+    SetProp "H0010", v_PlyrName
+    SetProp "H0101", v_Stat1
+    SetProp "H0201", v_Stat2
+    SetProp "H0301", v_Stat3
+    SetProp "H0401", v_Stat4
+    SetProp "H0100", v_Cat1
+    SetProp "H0200", v_Cat2
+    SetProp "H0300", v_Cat3
+    SetProp "H0400", v_Cat4
+    SetProp "B0300", v_Qual
+	if v_JerseyEnable = "YES" then
+    SetProp "H0011", v_PlyrJersey
+	else
+    SetProp "H0011", ""
+	end if
+	
+	if v_PositionEnable = "YES" then
+    SetProp "H0012", v_PlyrPos
+	else
+    SetProp "H0012", ""
+	end if
+
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "SL10" then
+	v_PlyrTeam = GetProp("B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	'v_PlyrStatCat = TrioCmd("page:get_property H0005")
+	v_PlyrNameF = GetProp("H0010")
+	v_PlyrNameL = GetProp("H0011")
+	v_PlyrName = v_PlyrNameF & " " & v_PlyrNameL
+	v_PlyrJersey = GetProp("H0031")
+	v_PlyrPos = GetProp("H0041")
+	v_Stat1 = GetProp("H1110")
+	v_Stat2 = GetProp("I1110")
+	v_Stat3 = GetProp("J1110")
+	v_Stat4 = GetProp("K1110")
+	v_Cat1 = GetProp("H1101")
+	v_Cat2 = GetProp("I1101")
+	v_Cat3 = GetProp("J1101")
+	v_Cat4 = GetProp("K1101")
+	v_Qual = GetProp("B0210")
+    If UseLastNameOnly() Then
+        v_PlyrName = v_PlyrNameL
+    End If
+    ReadTemplateSafe "CG_Ticker_PlayerStats"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0005", "1"
+    SetProp "H0010", v_PlyrName
+    SetProp "H0101", v_Stat1
+    SetProp "H0201", v_Stat2
+    SetProp "H0301", v_Stat3
+    SetProp "H0401", v_Stat4
+    SetProp "H0100", v_Cat1
+    SetProp "H0200", v_Cat2
+    SetProp "H0300", v_Cat3
+    SetProp "H0400", v_Cat4
+    SetProp "B0300", v_Qual
+	if v_JerseyEnable = "YES" then
+    SetProp "H0011", v_PlyrJersey
+	else
+    SetProp "H0011", ""
+	end if
+	
+	if v_PositionEnable = "YES" then
+    SetProp "H0012", v_PlyrPos
+	else
+    SetProp "H0012", ""
+	end if
+
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "Start5" then
+	v_PlyrTeam = GetProp("B0000")
+	v_PlyrTeam = Trim(v_PlyrTeam)
+	v_Qual = GetProp("B0100")
+	v_PlyrNameF1 = GetProp("H0010")
+	v_PlyrNameF2 = GetProp("I0010")
+	v_PlyrNameF3 = GetProp("J0010")
+	v_PlyrNameF4 = GetProp("K0010")
+	v_PlyrNameF5 = GetProp("L0010")
+	v_PlyrIname1 = Left(v_PlyrNameF1, 1) & "."
+	v_PlyrIname2 = Left(v_PlyrNameF2, 1) & "."
+	v_PlyrIname3 = Left(v_PlyrNameF3, 1) & "."
+	v_PlyrIname4 = Left(v_PlyrNameF4, 1) & "."
+	v_PlyrIname5 = Left(v_PlyrNameF5, 1) & "."
+	
+	v_PlyrNameL1 = GetProp("H0011")
+	v_PlyrNameL2 = GetProp("I0011")
+	v_PlyrNameL3 = GetProp("J0011")
+	v_PlyrNameL4 = GetProp("K0011")
+	v_PlyrNameL5 = GetProp("L0011")
+	v_PlyrName1 = v_PlyrNameF1 & " " & v_PlyrNameL1
+	v_PlyrName2 = v_PlyrNameF2 & " " & v_PlyrNameL2
+	v_PlyrName3 = v_PlyrNameF3 & " " & v_PlyrNameL3
+	v_PlyrName4 = v_PlyrNameF4 & " " & v_PlyrNameL4
+	v_PlyrName5 = v_PlyrNameF5 & " " & v_PlyrNameL5
+	
+	Select Case v_Start5NameToggle
+		Case "LAST"
+			v_NameType = "1"
+		Case "INITIAL"
+			v_NameType = "2"
+		Case "FULL"
+			v_NameType = "3"
+		Case Else
+			v_NameType = "1"
+	End Select
+	
+	v_PlyrJersey1 = GetProp("H0031")
+	v_PlyrJersey2 = GetProp("I0031")
+	v_PlyrJersey3 = GetProp("J0031")
+	v_PlyrJersey4 = GetProp("K0031")
+	v_PlyrJersey5 = GetProp("L0031")
+	v_PlyrPos1 = GetProp("H0041")
+	v_PlyrPos2 = GetProp("I0041")
+	v_PlyrPos3 = GetProp("J0041")
+	v_PlyrPos4 = GetProp("K0041")
+	v_PlyrPos5 = GetProp("L0041")
+    ReadTemplateSafe "CG_Ticker_StartingFive"
+    SetProp "A0100", v_League
+    SetProp "B0000", v_PlyrTeam
+    SetProp "H0102", v_PlyrName1
+    SetProp "H0202", v_PlyrName2
+    SetProp "H0302", v_PlyrName3
+    SetProp "H0402", v_PlyrName4
+    SetProp "H0502", v_PlyrName5
+    SetProp "H0104", v_PlyrNameL1
+    SetProp "H0204", v_PlyrNameL2
+    SetProp "H0304", v_PlyrNameL3
+    SetProp "H0404", v_PlyrNameL4
+    SetProp "H0504", v_PlyrNameL5
+    SetProp "H0103", v_PlyrIname1
+    SetProp "H0203", v_PlyrIname2
+    SetProp "H0303", v_PlyrIname3
+    SetProp "H0403", v_PlyrIname4
+    SetProp "H0503", v_PlyrIname5
+    SetProp "B0300", v_Qual
+    SetProp "H0055", v_NameType
+	if v_JerseyEnable = "YES" then
+    SetProp "H0050", "3"
+    SetProp "H0100", v_PlyrJersey1
+    SetProp "H0200", v_PlyrJersey2
+    SetProp "H0300", v_PlyrJersey3
+    SetProp "H0400", v_PlyrJersey4
+    SetProp "H0500", v_PlyrJersey5
+	else
+    SetProp "H0050", "0"
+	end if
+	
+	if v_PositionEnable = "YES" then
+    SetProp "H0050", "3"
+    SetProp "H0101", v_PlyrPos1
+    SetProp "H0201", v_PlyrPos2
+    SetProp "H0301", v_PlyrPos3
+    SetProp "H0401", v_PlyrPos4
+    SetProp "H0501", v_PlyrPos5
+	else
+    SetProp "H0050", "0"
+	end if
+
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+elseif v_CGtype = "CG" then
+	if Name = "CG_Ticker_StatComp" then
+		v_PlyrTeam1 = GetProp("B0000")
+		v_PlyrTeam1 = Trim(v_PlyrTeam1)
+		v_PlyrTeam2 = GetProp("B0001")
+		v_PlyrTeam2 = Trim(v_PlyrTeam2)
+		
+		if v_PlyrTeam1 = "CWS" then
+			v_PlyrTeam1 = "CHW"
+		end if
+		
+		if v_PlyrTeam2 = "CWS" then
+			v_PlyrTeam2 = "CHW"
+		end if
+    SetProp "B0000", v_PlyrTeam1
+    SetProp "B0001", v_PlyrTeam2
+	end if
+	
+	if Name = "CG_Ticker_2TeamNote" then
+		v_PlyrTeam1 = GetProp("B0000")
+		v_PlyrTeam1 = Trim(v_PlyrTeam1)
+		v_PlyrTeam2 = GetProp("B0001")
+		v_PlyrTeam2 = Trim(v_PlyrTeam2)
+		
+		if v_PlyrTeam1 = "CWS" then
+			v_PlyrTeam1 = "CHW"
+		end if
+		
+		if v_PlyrTeam2 = "CWS" then
+			v_PlyrTeam2 = "CHW"
+		end if
+    SetProp "B0000", v_PlyrTeam1
+    SetProp "B0001", v_PlyrTeam2
+	end if
+	Call m_NextBatter()
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_buildFromMacro")
+    SleepTpl
+	TrioCmd("vtwtemplate:run_vtw_script cg_link_inMacro")
+else
+	TrioCmd("trio:sleep 5")
+	TrioCmd("gui:error_message INVALID CGLink Page -------> ( " & Name & " ) Email Jordan Reis at ReisGraphics@gmail.com to add scene")
+	TrioCmd("gui:set_statusbar_color 180 0 0")	
+end if
+
+
+
+'============================================================
+' FUNCTIONS
+'============================================================
+
+Private Function GetTeamNickname(ByVal league, ByVal tricode)
+    Dim lg, code
+    lg = UCase(Trim(CStr(league)))
+    code = UCase(Trim(CStr(tricode)))
+
+    ' Normalize known alternates
+    If lg = "MLB" Then
+        If code = "CWS" Then code = "CHW"
+        If code = "AZ" Then code = "ARI"
+        If code = "SD" Then code = "SDP" ' optional; keep if your show expects SDP instead of SD (comment out if not)
+        If code = "SF" Then code = "SFG"
+        If code = "TB" Then code = "TBR"
+        If code = "KC" Then code = "KCR"
+    End If
+
+    Select Case lg
+        Case "MLB"
+            Select Case code
+                Case "ARI": GetTeamNickname = "DIAMONDBACKS"
+                Case "ATH", "OAK": GetTeamNickname = "ATHLETICS"
+                Case "ATL": GetTeamNickname = "BRAVES"
+                Case "BAL": GetTeamNickname = "ORIOLES"
+                Case "BOS": GetTeamNickname = "RED SOX"
+                Case "CHC": GetTeamNickname = "CUBS"
+                Case "CHW": GetTeamNickname = "WHITE SOX"
+                Case "CIN": GetTeamNickname = "REDS"
+                Case "CLE": GetTeamNickname = "GUARDIANS"
+                Case "COL": GetTeamNickname = "ROCKIES"
+                Case "DET": GetTeamNickname = "TIGERS"
+                Case "HOU": GetTeamNickname = "ASTROS"
+                Case "KCR", "KC": GetTeamNickname = "ROYALS"
+                Case "LAA": GetTeamNickname = "ANGELS"
+                Case "LAD": GetTeamNickname = "DODGERS"
+                Case "MIA": GetTeamNickname = "MARLINS"
+                Case "MIL": GetTeamNickname = "BREWERS"
+                Case "MIN": GetTeamNickname = "TWINS"
+                Case "NYM": GetTeamNickname = "METS"
+                Case "NYY": GetTeamNickname = "YANKEES"
+                Case "PHI": GetTeamNickname = "PHILLIES"
+                Case "PIT": GetTeamNickname = "PIRATES"
+                Case "SDP", "SD": GetTeamNickname = "PADRES"
+                Case "SEA": GetTeamNickname = "MARINERS"
+                Case "SFG", "SF": GetTeamNickname = "GIANTS"
+                Case "STL": GetTeamNickname = "CARDINALS"
+                Case "TBR", "TB": GetTeamNickname = "RAYS"
+                Case "TEX": GetTeamNickname = "RANGERS"
+                Case "TOR": GetTeamNickname = "BLUE JAYS"
+                Case "WSH": GetTeamNickname = "NATIONALS"
+                Case Else: GetTeamNickname = ""
+            End Select
+
+        Case "NBA"
+            Select Case code
+                Case "ATL": GetTeamNickname = "HAWKS"
+                Case "BOS": GetTeamNickname = "CELTICS"
+                Case "BKN": GetTeamNickname = "NETS"
+                Case "CHA": GetTeamNickname = "HORNETS"
+                Case "CHI": GetTeamNickname = "BULLS"
+                Case "CLE": GetTeamNickname = "CAVALIERS"
+                Case "DAL": GetTeamNickname = "MAVERICKS"
+                Case "DEN": GetTeamNickname = "NUGGETS"
+                Case "DET": GetTeamNickname = "PISTONS"
+                Case "GS": GetTeamNickname = "WARRIORS"
+                Case "HOU": GetTeamNickname = "ROCKETS"
+                Case "IND": GetTeamNickname = "PACERS"
+                Case "LAC": GetTeamNickname = "CLIPPERS"
+                Case "LAL": GetTeamNickname = "LAKERS"
+                Case "MEM": GetTeamNickname = "GRIZZLIES"
+                Case "MIA": GetTeamNickname = "HEAT"
+                Case "MIL": GetTeamNickname = "BUCKS"
+                Case "MIN": GetTeamNickname = "TIMBERWOLVES"
+                Case "NO": GetTeamNickname = "PELICANS"
+                Case "NY": GetTeamNickname = "KNICKS"
+                Case "ORL": GetTeamNickname = "MAGIC"
+                Case "PHI": GetTeamNickname = "76ers"
+                Case "PHX": GetTeamNickname = "SUNS"
+                Case "POR": GetTeamNickname = "TRAIL BLAZERS"
+                Case "SAC": GetTeamNickname = "KINGS"
+                Case "SA": GetTeamNickname = "SPURS"
+                Case "OKC": GetTeamNickname = "THUNDER"
+                Case "TOR": GetTeamNickname = "RAPTORS"
+                Case "UTAH": GetTeamNickname = "JAZZ"
+                Case "WSH", "WAS": GetTeamNickname = "WIZARDS"
+                Case Else: GetTeamNickname = ""
+            End Select
+
+        Case "NHL"
+            Select Case code
+                Case "ANA": GetTeamNickname = "DUCKS"
+                Case "BOS": GetTeamNickname = "BRUINS"
+                Case "BUF": GetTeamNickname = "SABRES"
+                Case "CGY": GetTeamNickname = "FLAMES"
+                Case "CAR": GetTeamNickname = "HURRICANES"
+                Case "CHI": GetTeamNickname = "BLACKHAWKS"
+                Case "COL": GetTeamNickname = "AVALANCHE"
+                Case "CBJ": GetTeamNickname = "BLUE JACKETS"
+                Case "DAL": GetTeamNickname = "STARS"
+                Case "DET": GetTeamNickname = "RED WINGS"
+                Case "EDM": GetTeamNickname = "OILERS"
+                Case "FLA": GetTeamNickname = "PANTHERS"
+                Case "LA": GetTeamNickname = "KINGS"
+                Case "MIN": GetTeamNickname = "WILD"
+                Case "MTL": GetTeamNickname = "CANADIENS"
+                Case "NSH": GetTeamNickname = "PREDATORS"
+                Case "NJ": GetTeamNickname = "DEVILS"
+                Case "NYI": GetTeamNickname = "ISLANDERS"
+                Case "NYR": GetTeamNickname = "RANGERS"
+                Case "OTT": GetTeamNickname = "SENATORS"
+                Case "PHI": GetTeamNickname = "FLYERS"
+                Case "PIT": GetTeamNickname = "PENGUINS"
+                Case "SJ": GetTeamNickname = "SHARKS"
+                Case "SEA": GetTeamNickname = "KRAKEN"
+                Case "STL": GetTeamNickname = "BLUES"
+                Case "TB": GetTeamNickname = "LIGHTNING"
+                Case "TOR": GetTeamNickname = "MAPLE LEAFS"
+                Case "UTAH": GetTeamNickname = "UTAH H.C."
+                Case "VGK": GetTeamNickname = "GOLDEN KNIGHTS"
+                Case "VAN": GetTeamNickname = "CANUCKS"
+                Case "WSH": GetTeamNickname = "CAPITALS"
+                Case "WPG": GetTeamNickname = "JETS"
+                Case Else: GetTeamNickname = ""
+            End Select
+
+        Case "NFL"
+            Select Case code
+                Case "ARI": GetTeamNickname = "CARDINALS"
+                Case "ATL": GetTeamNickname = "FALCONS"
+                Case "BAL": GetTeamNickname = "RAVENS"
+                Case "BUF": GetTeamNickname = "BILLS"
+                Case "CAR": GetTeamNickname = "PANTHERS"
+                Case "CHI": GetTeamNickname = "BEARS"
+                Case "CIN": GetTeamNickname = "BENGALS"
+                Case "CLE": GetTeamNickname = "BROWNS"
+                Case "DAL": GetTeamNickname = "COWBOYS"
+                Case "DEN": GetTeamNickname = "BRONCOS"
+                Case "DET": GetTeamNickname = "LIONS"
+                Case "GB": GetTeamNickname = "PACKERS"
+                Case "HOU": GetTeamNickname = "TEXANS"
+                Case "IND": GetTeamNickname = "COLTS"
+                Case "JAX": GetTeamNickname = "JAGUARS"
+                Case "KC": GetTeamNickname = "CHIEFS"
+                Case "LV": GetTeamNickname = "RAIDERS"
+                Case "LAC": GetTeamNickname = "CHARGERS"
+                Case "LAR": GetTeamNickname = "RAMS"
+                Case "MIA": GetTeamNickname = "DOLPHINS"
+                Case "MIN": GetTeamNickname = "VIKINGS"
+                Case "NE": GetTeamNickname = "PATRIOTS"
+                Case "NO": GetTeamNickname = "SAINTS"
+                Case "NYG": GetTeamNickname = "GIANTS"
+                Case "NYJ": GetTeamNickname = "JETS"
+                Case "PHI": GetTeamNickname = "EAGLES"
+                Case "PIT": GetTeamNickname = "STEELERS"
+                Case "SF": GetTeamNickname = "49ERS"
+                Case "SEA": GetTeamNickname = "SEAHAWKS"
+                Case "TB": GetTeamNickname = "BUCCANEERS"
+                Case "TEN": GetTeamNickname = "TITANS"
+                Case "WSH": GetTeamNickname = "COMMANDERS"
+                Case Else: GetTeamNickname = ""
+            End Select
+
+        Case Else
+            GetTeamNickname = ""
+    End Select
+End Function
+
+Private Sub m_vtwVersion(ByRef v_vtwNumber, ByRef v_WPrefresh)
+    Dim v_vtwCheck, regEx, matches
+    v_vtwCheck = a_vtwCheck
+
+    Set regEx = New RegExp
+    regEx.Pattern = "\d+(\.\d+)?"
+    Set matches = regEx.Execute(v_vtwCheck)
+
+    If matches.Count > 0 Then
+        v_vtwNumber = CDbl(matches(0).Value)
+    Else
+        v_vtwNumber = 0
+    End If
+
+    If v_vtwNumber < 4.6 Then
+        v_WPrefresh = "NO"
+    Else
+        v_WPrefresh = "YES"
+    End If
+End Sub
+
+Private Sub m_NextBatter()
+    Dim c_pagename, c_lenpagename, c_leftpagename, c_rightpagename, c_midpagename
+    Dim a_lastABnum, a_nextABnum, h_lastABnum, h_nextABnum
+
+    c_pagename = TrioCmd("page:getpagename")
+    c_lenpagename = Len(c_pagename)
+
+    If c_lenpagename <> 3 Then Exit Sub
+
+    c_leftpagename = Left(c_pagename, 1)
+    c_midpagename = Mid(c_pagename, 2, 1)
+    c_rightpagename = Right(c_pagename, 1)
+
+    If c_leftpagename = "5" Then
+        a_lastABnum = CInt(c_rightpagename)
+        If a_lastABnum = 9 Then
+            a_nextABnum = 1
+        Else
+            a_nextABnum = a_lastABnum + 1
+        End If
+        TrioCmd "show:set_variable sv_lastAwayBatter " & "51" & CStr(a_nextABnum)
+
+    ElseIf c_leftpagename = "6" Then
+        h_lastABnum = CInt(c_rightpagename)
+        If h_lastABnum = 9 Then
+            h_nextABnum = 1
+        Else
+            h_nextABnum = h_lastABnum + 1
+        End If
+        TrioCmd "show:set_variable sv_lastHomeBatter " & "61" & CStr(h_nextABnum)
+    End If
+End Sub

@@ -1,0 +1,21 @@
+'JORDAN: NEW TAKEOUT (KEY: {TAKEOUT})
+'REGULAR TAKEOUT USES STORED VALUES OF LAST PAGE SENT TO VIZ-1 OR VIZ-2 TO TAKEOUT OR CONTINUE OFF SCENE ON OUTPUTS.
+
+c_progchannel = TrioCmd("channelcontrol:get_program_channel")
+
+if c_progchannel = "VIZ-1" then
+	l_pagename = TrioCmd("show:get_variable lt_page1")
+	l_pagelayer = TrioCmd("show:get_variable lt_layer1")
+end if
+if c_progchannel = "VIZ-2" then
+	l_pagename = TrioCmd("show:get_variable lt_page2")
+	l_pagelayer = TrioCmd("show:get_variable lt_layer2")
+end if
+
+if l_pagelayer = "Main" then
+	TrioCmd("page:continue " & l_pagename)
+elseif l_pagelayer = "MAIN" then
+	TrioCmd("page:continue " & l_pagename)
+else
+	TrioCmd("page:takeout " & l_pagename)
+end if

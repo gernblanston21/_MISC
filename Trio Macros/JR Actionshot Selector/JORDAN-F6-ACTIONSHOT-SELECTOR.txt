@@ -1,0 +1,242 @@
+'JORDAN: ACTIONSHOT SELECTOR (KEY: {F6})
+'1. TAB TO ACTIONSHOT TABFIELD YOU WANT TO PATH
+'2. RUN SCRIPT
+'3. ENTER NUMBER FOR ACTIONSHOT FILE YOU WANT, LEAVE BLANK TO SEE MORE IF LIST IS LONG
+
+tf_names = TrioCmd("page:get_tabfield_names")
+a_Letters = array("H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S")
+c_tempId = TrioCmd("page:getpagetemplate")
+
+y = ""
+yy = ""
+yyy = ""
+yyyy = ""
+z = 1
+ww = 0
+
+Select Case c_tempId
+	Case "FS_10HdStat","SL_GameSummaryMLS"
+		v_teamH = "B0001"
+		v_teamI = "B0002"
+		v_teamJ = "B0003"
+		v_teamK = "B0004"
+		v_teamL = "B0005"
+		v_teamM = "B0006"
+		v_teamN = "B0007"
+		v_teamO = "B0008"
+		v_teamP = "B0009"
+		v_teamQ = "B0010"
+	Case "FS_Defense_Lineup_MLB","FS_Strt5NBA","FS_PlyrStat","FS_PlyrNote","L3_TalentPick","L3_PlyrNote","L3_PlyrStat"
+		v_teamH = "B0000"
+		v_teamI = "B0000"
+		v_teamJ = "B0000"
+		v_teamK = "B0000"
+		v_teamL = "B0000"
+		v_teamM = "B0000"
+		v_teamN = "B0000"
+		v_teamO = "B0000"
+		v_teamP = "B0000"
+		v_teamQ = "B0000"
+	Case Else
+		v_teamH = "B0000"
+		v_teamI = "B0001"
+		v_teamJ = "B0002"
+		v_teamK = "B0003"
+		v_teamL = "B0004"
+		v_teamM = "B0005"
+		v_teamN = "B0006"
+		v_teamO = "B0007"
+		v_teamP = "B0008"
+		v_teamQ = "B0009"
+End Select
+
+cv_tabfield = TrioCmd("page:get_current_tabfield_name")
+cv_tabfieldleft = left(cv_tabfield, 1)
+
+For i = lbound(a_Letters) to ubound(a_Letters)
+	if cv_tabfieldleft = a_Letters(i) then
+		Select Case cv_tabfieldleft
+			Case "H"
+				a_teamTri = v_teamH
+			Case "I"
+				a_teamTri = v_teamI
+			Case "J"
+				a_teamTri = v_teamJ
+			Case "K"
+				a_teamTri = v_teamK
+			Case "L"
+				a_teamTri = v_teamL
+			Case "M"
+				a_teamTri = v_teamM
+			Case "N"
+				a_teamTri = v_teamN
+			Case "O"
+				a_teamTri = v_teamO
+			Case "P"
+				a_teamTri = v_teamP
+			Case "Q"
+				a_teamTri = v_teamQ
+			Case Else
+				a_teamTri = "B0000"
+		End Select		
+	end if
+Next	
+
+cv_league = TrioCmd("page:get_property A0100")
+cv_team = TrioCmd("page:get_property " & a_teamTri)
+
+if cv_league = "" then
+	a_fnLeague = inputbox("What League?" & vbCrlf & vbCrlf & "Example:   NBA","Actionshot Selector",cv_league)
+	TrioCmd("page:set_property A0100 " & UCase(a_fnLeague))
+else
+	a_fnLeague = cv_league
+end if
+
+if cv_team = "" then
+	a_fnTeam = inputbox("What Team?" & vbCrlf & vbCrlf & "Example:   DET","Actionshot Selector",cv_team)
+	TrioCmd("page:set_property " & a_teamTri & " " & UCase(a_fnTeam))
+else
+	a_fnTeam = cv_team
+end if
+
+'a_fnSearchX = inputbox("Search Player Name" & vbCrlf & vbCrlf & "This will find the closest match and path the headshot","Headshot Selector","")
+'a_fnSearch = Replace(a_fnSearchX, " ", "_")
+
+Set fso = CreateObject("Scripting.FileSystemObject")
+Set fldr = fso.GetFolder("E:\EDRIVE\" & UCase(a_fnLeague) & "\ACTIONSHOTS\" & UCase(a_fnTeam) & "\")
+Set flcoll = fldr.Files
+nv_path = "E:\EDRIVE\" & UCase(a_fnLeague) & "\ACTIONSHOTS\" & UCase(a_fnTeam) & "\"
+
+For Each f In flcoll
+	if ww < 40 then
+		y = y & z & ". " & f.Name & vbCrLf
+		z = z + 1
+	elseif ww < 80 then
+		if ww = 40 then
+			y = y & "Leave blank for next page..."
+		end if
+		yy = yy & z & ". " & f.Name & vbCrLf
+		z = z + 1
+	elseif ww < 120 then
+		if ww = 80 then
+			yy = yy & "Leave blank for next page..."
+		end if
+		yyy = yyy & z & ". " & f.Name & vbCrLf
+		z = z + 1
+	elseif ww < 160 then
+		if ww = 120 then
+			yyy = yyy & "Leave blank for next page..."
+		end if
+		yyy = yyy & z & ". " & f.Name & vbCrLf
+		z = z + 1
+	end if
+	ww = ww + 1
+Next
+
+    sno = 2
+    if y <> "" then
+	  y = Replace(y, ".png", "")
+      s = InputBox(Replace(y, a_fnTeam & "_", ""), a_fnTeam & " Actionshot Picker")
+      if s = "" then
+        if yy <> "" then
+		  yy = Replace(yy, ".png", "")
+          s = InputBox(Replace(yy, a_fnTeam & "_", ""), a_fnTeam & " Actionshot Picker")
+          if s = "" then
+            if yyy <> "" then
+              yyy = Replace(yyy, ".png", "")
+			  s = InputBox(Replace(yyy, a_fnTeam & "_", ""), a_fnTeam & " Actionshot Picker")
+              if s = "" then
+                if yyyy <> "" then
+                  yyyy = Replace(yyyy, ".png", "")
+				  s = InputBox(Replace(yyyy, a_fnTeam & "_", ""), a_fnTeam & " Actionshot Picker")
+                  if s = "" then
+                    sno = 2
+                  else
+                    sno = 0
+                    for schr = 48 to 57
+                      if left(s, 1) = chr(schr) then
+                        sno = 1
+                      end if
+                    next
+                  end if
+                end if
+              else
+                sno = 0
+                for schr = 48 to 57
+                  if left(s, 1) = chr(schr) then
+                    sno = 1
+                  end if
+                next
+              end if
+            end if 
+          else
+            sno = 0
+            for schr = 48 to 57
+              if left(s, 1) = chr(schr) then
+                sno = 1
+              end if
+            next
+          end if
+        end if 
+      else
+        sno = 0
+        for schr = 48 to 57
+          if left(s, 1) = chr(schr) then
+            sno = 1
+          end if
+        next
+      end if
+    end if 
+
+    if sno <> 2 then
+      if sno = 1 then
+        nv_fnList = "NOT FOUND"
+        w = 1    
+        for each f in flcoll
+          if w = CInt(s) then
+            nv_fnList = f.Name
+          end if
+          w = w + 1
+        next      
+      
+        if not nv_fnList = "NOT FOUND" then
+          if sngl = 1 then
+            as_n = "Actionshot"
+          else
+            as_n = "Actionshot0" & o
+          end if
+          for x = 1 to 20
+            if x < 10 then
+              a = "0" & x
+            else
+              a = x
+            end if
+		  next
+		end if  
+	  end if    
+	end if
+
+'v_fnList = split(nv_fnList, "_")
+
+'nv_last = v_fnList(1)
+'nv_firstx = replace(nv_fnList, v_fnList(1), "")
+'nv_firstxx = replace(nv_firstx, v_fnList(0), "")
+'nv_firstxxx = replace(nv_firstxx, "_960.png", "")
+'nv_firstxxxx = replace(nv_firstxxx, "_", "")
+'nv_first = trim(nv_firstxxxx)
+
+TrioCmd("page:set_property " & cv_tabfield & " " & nv_path & nv_fnList)
+
+'Select Case c_tempId
+'	Case "SL_GameSummaryMLS"
+'		nv_firstL = LCase(nv_first)
+'		nv_lastL = LCase(nv_last)
+'		TrioCmd("page:set_property " & cv_tabfieldleft & "0100 " & nv_firstL & " " & nv_lastL)
+'	Case "FS_10HdStat"
+'		TrioCmd("page:set_property " & cv_tabfieldleft & "2010 " & nv_first & " " & nv_last)
+'	Case "L3_TalentPick"
+'		'TrioCmd("page:tab")
+'	Case Else
+'		TrioCmd("page:set_property " & cv_tabfieldleft & "0010 " & nv_first)
+'		TrioCmd("page:set_property " & cv_tabfieldleft & "0011 " & nv_last)
+'End Select
